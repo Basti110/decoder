@@ -1,4 +1,6 @@
 #include <numeric>
+#include <math.h>
+#include <chrono>
 #include "decoder.h"
 #include "utils.h"
 
@@ -52,7 +54,7 @@ bool Decoder::init_default_boxes(const DefaultBoxSetting& s)
             float w = sk1 * std::sqrt(alpha);
             float h = sk1 / std::sqrt(alpha);
             all_sizes.push_back({ w, h });
-            all_sizes.push_back({ w, h });
+            all_sizes.push_back({ h, w });
         }
 
         for (auto size : all_sizes) {
@@ -60,6 +62,10 @@ bool Decoder::init_default_boxes(const DefaultBoxSetting& s)
                 for (int x = 0; x < s.feat_size[i]; ++x) {
                     float cx = ((float)x + 0.5f) / fk[i];
                     float cy = ((float)y + 0.5f) / fk[i];
+                    /*cx = std::max(0.0f, cx);
+                    cx = std::min(1.0f, cx);
+                    cy = std::max(0.0f, cy);
+                    cy = std::min(1.0f, cy);*/
                     float l = cx - 0.5f * size.first;
                     float t = cy - 0.5f * size.second;
                     float r = cx + 0.5f * size.first;
@@ -81,8 +87,13 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
 {
     const float treshold = 0.5;
     const float max_elements = 200;
+
+    auto start = std::chrono::high_resolution_clock::now();
     scale_back_batch(boxes_in, scores_in);
+    auto finish = std::chrono::high_resolution_clock::now();
+    LOG_INFO("Time scale_back_batch: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
     
+    start = std::chrono::high_resolution_clock::now();
     vector<BoxLabel> output;
 
     for (int i = 1; i < scores_in.cols(); ++i) {
@@ -101,8 +112,6 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
         if (scores.size() == 0)
             continue;
 
-        std::cout << boxes << std::endl << std::endl;
-
         vector<int> score_idx_sorted(scores.size());
         std::iota(score_idx_sorted.begin(), score_idx_sorted.end(), 0);
         std::sort(score_idx_sorted.begin(), score_idx_sorted.end(), [&scores](int i1, int i2) {return scores[i1] < scores[i2]; });
@@ -112,7 +121,6 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
             int idx = score_idx_sorted[score_idx_sorted.size() - 1];
             MatrixXf bboxes_sorted = utils::get_rows_from_idx_vec(boxes, score_idx_sorted);
             MatrixXf bboxes_idx = boxes.row(idx);
-            std::cout << bboxes_sorted << std::endl << std::endl;
             vector<float> iou = calc_iou_tensor(bboxes_sorted, bboxes_idx);
             utils::remove_idx_over_criteria_in_second_vec(score_idx_sorted, iou, criteria);
 
@@ -123,7 +131,31 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
             output.push_back(label);
         }
     }
+    finish = std::chrono::high_resolution_clock::now();
+    LOG_INFO("Time compute boxes: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
  	return output;
+}
+
+static inline float FastExpSse(float f)
+{
+    float e;
+    __m128 x = _mm_set1_ps(f);
+    __m128 a = _mm_set1_ps(12102203.2f); // (1 << 23) / ln(2)
+    __m128i b = _mm_set1_epi32(127 * (1 << 23) - 486411);
+    __m128  m87 = _mm_set1_ps(-87);
+    // fast exponential function, x should be in [-87, 87]
+    __m128 mask = _mm_cmpge_ps(x, m87);
+
+    __m128i tmp = _mm_add_epi32(_mm_cvtps_epi32(_mm_mul_ps(a, x)), b);
+    _mm_store_ps(&e, _mm_and_ps(_mm_castsi128_ps(tmp), mask));
+    return e;
+}
+
+inline double exp1(double x) {
+    x = 1.0 + x / 256.0;
+    x *= x; x *= x; x *= x; x *= x;
+    x *= x; x *= x; x *= x; x *= x;
+    return x;
 }
 
 void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
@@ -134,11 +166,10 @@ void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
         boxes_in.row(i)[2] *= mSettings.scale_wh;
         boxes_in.row(i)[3] *= mSettings.scale_wh;
 
-
         boxes_in.row(i)[0] = boxes_in.row(i)[0] * mDBoxes.row(i)[2] + mDBoxes.row(i)[0];
         boxes_in.row(i)[1] = boxes_in.row(i)[1] * mDBoxes.row(i)[3] + mDBoxes.row(i)[1];
-        boxes_in.row(i)[2] = boxes_in.row(i)[0] * mDBoxes.row(i)[2];
-        boxes_in.row(i)[3] = boxes_in.row(i)[1] * mDBoxes.row(i)[3];
+        boxes_in.row(i)[2] = std::exp((float)boxes_in.row(i)[2]) * mDBoxes.row(i)[2];
+        boxes_in.row(i)[3] = std::exp((float)boxes_in.row(i)[3]) * mDBoxes.row(i)[3];
 
 
         float l = boxes_in.row(i)[0] - 0.5f * boxes_in.row(i)[2];
@@ -150,17 +181,40 @@ void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
         boxes_in.row(i)[1] = t;
         boxes_in.row(i)[2] = r;
         boxes_in.row(i)[3] = b;
-
-
     }
 
-
-    //Softmax
+    auto start = std::chrono::high_resolution_clock::now();
+    //Softmax 28ms 
+    /*scores_in = scores_in.unaryExpr([](float c) 
+        { 
+            float e;
+            __m128 t = _mm_set1_ps(c);
+            t = FastExpSse(t);
+            _mm_store_ps(&e, t);
+            return e;
+        });*/
+    //scores_in = scores_in.unaryExpr([](float c) { return std::exp(c); });
     for (int i = 0; i < scores_in.rows(); ++i) {
-        scores_in.row(i) = scores_in.row(i).unaryExpr([](float c){ return std::exp(c); });
-        float sum = scores_in.row(i).sum();
-        scores_in.row(i) = scores_in.row(i).unaryExpr([sum](float c) { return c / sum; });
+        //scores_in.row(i) = scores_in.row(i).unaryExpr([](float c){ return std::exp(c); });
+        //float sum = scores_in.row(i).sum();
+        //scores_in.row(i) = scores_in.row(i).unaryExpr([sum](float c) { return c / sum; });
     }
+
+    //New Softmax 28ms
+    for (int i = 0; i < scores_in.rows(); ++i) {
+        float sum = 0.0f;
+
+        for (int j = 0; j < scores_in.cols(); ++j) {
+            scores_in(i, j) = exp1(scores_in(i, j)); // std::exp(scores_in(i, j));
+            sum += scores_in(i, j);
+        }
+
+        for (int j = 0; j < scores_in.cols(); ++j)
+            scores_in(i, j) /= sum;
+    }
+
+    auto finish = std::chrono::high_resolution_clock::now();
+    LOG_INFO("Time softmax: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 }
 
 //input:

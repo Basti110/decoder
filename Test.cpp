@@ -46,7 +46,7 @@ void Test::run_test_utils()
             4, 4, 4, 4;
 
         utils::softmax_col(m1);
-        std::cout << m1 << std::endl << std::endl;
+        //std::cout << m1 << std::endl << std::endl;
     }
 }
 
@@ -86,13 +86,11 @@ void Test::run_test_decoder()
         5, 1, 7, 4,
         8, 5, 10, 7,
         4, 3, 6, 6;
-    std::cout << m1 << std::endl << std::endl;
 
     MatrixXf m2(1, 4);
     m2 << 4, 3, 6, 6;
-    std::cout << m2 << std::endl << std::endl;
 
-    std::vector<int> vec({ 1, 2, 3, 4, 5, 6 });
+    std::vector<int> vec({ 1, 2, 3, 4, 5, 6, 7 });
     vector<float> iou = decoder.calc_iou_tensor(m1, m2);
     utils::remove_idx_over_criteria_in_second_vec(vec, iou, 0.1f);
 }

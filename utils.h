@@ -2,8 +2,14 @@
 #include <vector>
 #include <iostream>
 
+#define VERBOSE true
+
 #ifndef LOG_ERROR(X)
 #define LOG_ERROR(X) ::utils::log_error(X, __FILE__, __LINE__, __func__)
+#endif 
+
+#ifndef LOG_INFO(...)
+#define LOG_INFO(...) ::utils::log_info(##__VA_ARGS__)
 #endif 
 
 #ifndef LOG_ERROR_IF(Pred, X)
@@ -14,6 +20,15 @@ namespace utils {
 	static void log_error(std::string e, const char* file, int line, const char* func) {
 		std::cout << "ERROR: \"" << e << "\" in file " << file << "::" << line << " " << func << "(...)" << std::endl;
 	}
+
+    template<typename ... Args>
+    static void log_info(const std::string& format, Args ... args) {
+        if (VERBOSE) {
+            std::printf("Info(): ");
+            std::printf(format.c_str(), args ...);
+            std::printf("\n");
+        }
+    }
 
 	//TODO: Matrix per Reference and not value!!
 	template<typename _Scalar>
