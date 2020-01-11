@@ -1,8 +1,8 @@
 #include <numeric>
 #include <math.h>
 #include <chrono>
-#include "decoder.h"
-#include "utils.h"
+#include "../include/decoder.h"
+#include "../include/utils.h"
 
 bool Decoder::init_default_boxes300()
 {

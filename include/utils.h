@@ -17,13 +17,15 @@
 #endif 
 
 namespace utils {
+    static bool verbose = VERBOSE;
+
 	static void log_error(std::string e, const char* file, int line, const char* func) {
 		std::cout << "ERROR: \"" << e << "\" in file " << file << "::" << line << " " << func << "(...)" << std::endl;
 	}
 
     template<typename ... Args>
     static void log_info(const std::string& format, Args ... args) {
-        if (VERBOSE) {
+        if (verbose) {
             std::printf("Info(): ");
             std::printf(format.c_str(), args ...);
             std::printf("\n");

@@ -1,6 +1,6 @@
-#include "Test.h"
-#include "decoder.h"
-#include "utils.h"
+#include "../include/Test.h"
+#include "../include/decoder.h"
+#include "../include/utils.h"
 
 void Test::run_test_utils()
 {
