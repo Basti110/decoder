@@ -13,6 +13,7 @@ using json = nlohmann::json;
 using string = std::string;
 
 bool test(const string& image_path, const string& json_path);
+void cam();
 
 int main(int argc, char* argv[])
 {
@@ -54,7 +55,10 @@ int main(int argc, char* argv[])
         if(result.count("j"))
             json_path = result["j"].as<string>();
         test(image_path, json_path);
+        exit(0);
     }
+
+    cam();
 }
 
 bool test(const string& image_path, const string& json_path) {
@@ -119,6 +123,21 @@ bool test(const string& image_path, const string& json_path) {
         cv::waitKey(0);
     }
     return true;
+}
+
+void cam()
+{
+    cv::VideoCapture cap;
+    if (!cap.open(0))   
+        return;
+    for (;;)
+    {
+        cv::Mat frame;
+        cap >> frame;
+        if (frame.empty()) break; 
+        if (cv::waitKey(10) == 27) break; 
+    }
+    return;
 }
 
 
