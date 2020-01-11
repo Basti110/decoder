@@ -4,15 +4,15 @@
 
 #define VERBOSE true
 
-#ifndef LOG_ERROR(X)
+#ifndef LOG_ERROR
 #define LOG_ERROR(X) ::utils::log_error(X, __FILE__, __LINE__, __func__)
 #endif 
 
-#ifndef LOG_INFO(...)
-#define LOG_INFO(...) ::utils::log_info(##__VA_ARGS__)
+#ifndef LOG_INFO
+#define LOG_INFO(...) ::utils::log_info(__VA_ARGS__)
 #endif 
 
-#ifndef LOG_ERROR_IF(Pred, X)
+#ifndef LOG_ERROR_IF
 #define LOG_ERROR_IF(Pred, X) if(Pred) LOG_ERROR(X)
 #endif 
 

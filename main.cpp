@@ -42,7 +42,7 @@ int main()
     }
 
     auto finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time JSON to Vectors: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time JSON to Vectors: %i", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 
     start = std::chrono::high_resolution_clock::now();
     Eigen::MatrixXf locations = ::utils::vector2d_to_eigenmatrix(locations_2dv, 4, box_size);
@@ -52,12 +52,12 @@ int main()
     scores.transposeInPlace();
 
     finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time Vectors to Eigen: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time Vectors to Eigen: %i", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 
     start = std::chrono::high_resolution_clock::now();
     vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
     finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Complete Time decode batch: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Complete Time decode batch: %i", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 
     Mat image;
     image = imread(std::string("C:/Users/Basti/Documents/data/val2017/000000026564.jpg").c_str(), IMREAD_COLOR);
