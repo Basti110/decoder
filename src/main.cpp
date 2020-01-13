@@ -18,9 +18,12 @@ void cam();
 int main(int argc, char* argv[])
 {
     string file_path = __FILE__;
-    string dir_path = file_path.substr(0, file_path.rfind("\\"));
+    #ifdef _WIN32
+        string dir_path = file_path.substr(0, file_path.rfind("\\"));
+    #else
+        string dir_path = file_path.substr(0, file_path.rfind("/"));
+    #endif
     dir_path.append("/../data/");
-    std::cout << dir_path << std::endl;
 
     string json_path = string(dir_path).append("ssd_output.json");
     string image_path = string(dir_path).append("000000026564.jpg");
@@ -57,7 +60,6 @@ int main(int argc, char* argv[])
         test(image_path, json_path);
         exit(0);
     }
-
     cam();
 }
 
@@ -68,6 +70,7 @@ bool test(const string& image_path, const string& json_path) {
 
     json j;
     std::ifstream ifs;
+    std::cout << json_path << std::endl;
     ifs.open(json_path, std::ifstream::in);
     ifs >> j;
 
@@ -89,7 +92,7 @@ bool test(const string& image_path, const string& json_path) {
     }
 
     auto finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time JSON to Vectors: %i", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time JSON to Vectors: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 
     start = std::chrono::high_resolution_clock::now();
     Eigen::MatrixXf locations = ::utils::vector2d_to_eigenmatrix(locations_2dv, 4, box_size);
@@ -99,12 +102,12 @@ bool test(const string& image_path, const string& json_path) {
     scores.transposeInPlace();
 
     finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time Vectors to Eigen: %i", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time Vectors to Eigen: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 
     start = std::chrono::high_resolution_clock::now();
     vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
     finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Complete Time decode batch: %i", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Complete Time decode batch: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 
     cv::Mat image;
     image = cv::imread(image_path, cv::IMREAD_COLOR);

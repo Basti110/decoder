@@ -91,7 +91,7 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
     auto start = std::chrono::high_resolution_clock::now();
     scale_back_batch(boxes_in, scores_in);
     auto finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time scale_back_batch: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time scale_back_batch: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
     
     start = std::chrono::high_resolution_clock::now();
     vector<BoxLabel> output;
@@ -132,7 +132,7 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
         }
     }
     finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time compute boxes: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time compute boxes: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
  	return output;
 }
 
@@ -184,7 +184,7 @@ void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
     }
 
     auto start = std::chrono::high_resolution_clock::now();
-    //Softmax 28ms 
+    //Softmax 5ms 
     /*scores_in = scores_in.unaryExpr([](float c) 
         { 
             float e;
@@ -193,14 +193,15 @@ void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
             _mm_store_ps(&e, t);
             return e;
         });*/
-    //scores_in = scores_in.unaryExpr([](float c) { return std::exp(c); });
-    for (int i = 0; i < scores_in.rows(); ++i) {
-        //scores_in.row(i) = scores_in.row(i).unaryExpr([](float c){ return std::exp(c); });
-        //float sum = scores_in.row(i).sum();
-        //scores_in.row(i) = scores_in.row(i).unaryExpr([sum](float c) { return c / sum; });
-    }
 
-    //New Softmax 28ms
+    //Softmax 28ms
+    /*for (int i = 0; i < scores_in.rows(); ++i) {
+        scores_in.row(i) = scores_in.row(i).unaryExpr([](float c){ return std::exp(c); });
+        float sum = scores_in.row(i).sum();
+        scores_in.row(i) = scores_in.row(i).unaryExpr([sum](float c) { return c / sum; });
+    }*/
+
+    //New Softmax 2ms
     for (int i = 0; i < scores_in.rows(); ++i) {
         float sum = 0.0f;
 
@@ -214,7 +215,7 @@ void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
     }
 
     auto finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time softmax: %d", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("Time softmax: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 }
 
 //input:
