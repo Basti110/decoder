@@ -133,12 +133,13 @@ void cam()
     cv::VideoCapture cap;
     if (!cap.open(0))   
         return;
-    for (;;)
+    cv::namedWindow("cam",1);
+    for(;;)
     {
         cv::Mat frame;
-        cap >> frame;
-        if (frame.empty()) break; 
-        if (cv::waitKey(10) == 27) break; 
+        cap >> frame; // get a new frame from camera
+        cv::imshow("cam", frame);
+        if(cv::waitKey(30) >= 0) break;
     }
     return;
 }
