@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
         ("t, test", "Start decoder test with example image and data")
         ("j, json", string("Json input file for test data. Default: ").append(json_path), cxxopts::value<string>())
         ("v, verbose", "Verbose \"info()\" output")
-        ("ip, host", string("IP, stream over network"), cxxopts::value<string>())
+        ("host", string("IP, stream over network"), cxxopts::value<string>())
         ("p, port", string("Port, default: 8485"), cxxopts::value<int>())
         ("i, image", string("Path to image for test mode. Default: ").append(image_path), cxxopts::value<string>());
 
@@ -53,10 +53,10 @@ int main(int argc, char* argv[])
     string ip;
     bool network = false;
 
-    if(result.count("ip")) {
+    if(result.count("host")) {
         std::cout << "network mode" << std::endl;
         network = true;
-        ip = result["ip"].as<string>();
+        ip = result["host"].as<string>();
         if(result.count("p")) 
             port = result["p"].as<int>();
     }
@@ -175,6 +175,7 @@ void cam()
 
 void send_cam(const char* ip, int port)
 {
+    std::cout << "send over network" << std::endl;
     int sokt;
 
     struct sockaddr_in serverAddr;
@@ -238,7 +239,7 @@ void send_cam(const char* ip, int port)
             break;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         //imshow("Live", frame);
         //if (waitKey(5) >= 0)
             //break;
