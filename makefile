@@ -2,8 +2,8 @@ CC=gcc
 CFLAGS=-std=c++17 -O3
 
 # Dependencies
-DEPSH = decoder.h Test.h utils.h
-OBJ = main.o decoder.o Test.o
+DEPSH = decoder.h Test.h utils.h core_app.h quantizer.h
+OBJ = main.o decoder.o Test.o core_app.o quantizer.o
 LIBS=-lopencv_calib3d -lopencv_imgproc -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_videoio -lstdc++ -lm
 
 # Paths

@@ -18,12 +18,12 @@ public:
 private:
     void set_timer();
     void log_timer(std::string msg);
-    bool send_frame(const cv::Mat& frame);
+    bool send_frame(cv::Mat& frame);
 
 private:
     bool mSocketReady = false;
     int mSocket = 0;
     std::vector<uchar> mBuffer;
-    std::chrono::time_point<std::chrono::steady_clock> mStartTime;
+    std::chrono::time_point<std::chrono::system_clock> mStartTime;
 };
 

@@ -176,7 +176,9 @@ void CoreApp::start_camera_test(bool use_network)
             break;
         }
         if (use_network) {
+            std::cout << "t1" << std::endl;
             send_frame(frame);
+            std::cout << "t2" << std::endl;
         }
         else {
             cv::imshow("cam", frame);
@@ -232,7 +234,7 @@ void CoreApp::log_timer(std::string msg)
     LOG_INFO(msg, std::chrono::duration_cast<std::chrono::milliseconds>(finish - mStartTime).count());
 }
 
-bool CoreApp::send_frame(const cv::Mat& frame)
+bool CoreApp::send_frame(cv::Mat& frame)
 {
     int bytes = 0;
 
@@ -271,4 +273,5 @@ bool CoreApp::send_frame(const cv::Mat& frame)
         std::cerr << "bytes = " << bytes << std::endl;
         return false;
     }
+    std::cout << "end" << std::endl;
 }

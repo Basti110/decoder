@@ -22,7 +22,7 @@
 #include "../include/decoder.h"
 #include "../include/utils.h"
 #include "../include/Test.h"
-#include "../include/quantizer.h"
+//#include "../include/quantizer.h"
 #include "../include/core_app.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
         .add_options()
         ("h, help", "Print help")
         ("t, test", "Start decoder test with example image and data")
+        ("c, cam", "Test cam")
         ("d, data", string("data input file for test data. Default: ").append(data_path), cxxopts::value<string>())
         ("v, verbose", "Verbose \"info()\" output")
         ("host", string("IP, stream over network"), cxxopts::value<string>())
@@ -101,6 +102,15 @@ int main(int argc, char* argv[])
             app.open_socket(ip, port);
 
         app.start_decoder_test(image_path, data_path, network);
+    }
+
+    if (result.count("c")) {
+        std::cout << "*** Camera Test  ***" << std::endl;
+        CoreApp app = CoreApp();
+        if (network)
+            app.open_socket(ip, port);
+
+        app.start_camera_test(network);
     }
 }
 
