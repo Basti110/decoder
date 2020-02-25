@@ -23,6 +23,7 @@
 #include "../include/utils.h"
 #include "../include/Test.h"
 #include "../include/quantizer.h"
+#include "../include/core_app.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
 
@@ -31,17 +32,9 @@ using MatrixXf = Eigen::MatrixXf;
 using json = nlohmann::json;
 using string = std::string;
 
-cv::Mat test(const string& image_path, const string& json_path);
 void test();
-void cam();
 void send_cam(const char* ip, int port);
 void send_frame(const char* ip, int port, cv::Mat frame);
-
-struct dim3 {
-    int x;
-    int y;
-    int z;
-};
 
 int main(int argc, char* argv[])
 {
@@ -53,11 +46,12 @@ int main(int argc, char* argv[])
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
     //todo
-    dir_path.append("/../data/");
-    string json_path = dir_path;
+    //dir_path.append("/../data/data.txt");
+    string data_path = dir_path;
+    data_path.append("/../data/data.txt");
 
     //string json_path = string(dir_path).append("ssd_output.json"); // ssd_output.json");
-    string image_path = string(dir_path).append("000000026564.jpg");
+    string image_path = string(dir_path).append("/../data/000000026564.jpg");
 
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();
@@ -66,7 +60,7 @@ int main(int argc, char* argv[])
         .add_options()
         ("h, help", "Print help")
         ("t, test", "Start decoder test with example image and data")
-        ("j, json", string("Json input file for test data. Default: ").append(json_path), cxxopts::value<string>())
+        ("d, data", string("data input file for test data. Default: ").append(data_path), cxxopts::value<string>())
         ("v, verbose", "Verbose \"info()\" output")
         ("host", string("IP, stream over network"), cxxopts::value<string>())
         ("p, port", string("Port, default: 8485"), cxxopts::value<int>())
@@ -100,204 +94,14 @@ int main(int argc, char* argv[])
         if (result.count("i"))
             image_path = result["i"].as<string>();
         if(result.count("j"))
-            json_path = result["j"].as<string>();
-        cv::Mat frame = test(image_path, json_path);
+            data_path = result["j"].as<string>();
 
-        if (frame.data) {
-            if(!network) {
-                cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
-                imshow("Display window", frame);
-                cv::waitKey(0);
-            }
-            else 
-                send_frame(ip.c_str(), port, frame);    
-        }
-        exit(0);
+        CoreApp app = CoreApp();
+        if (network)
+            app.open_socket(ip, port);
+
+        app.start_decoder_test(image_path, data_path, network);
     }
-
-    test();
-    
-    /*if(network) 
-        send_cam(ip.c_str(), port);
-    else
-        cam();*/
-}
-
-cv::Mat test(const string& image_path, const string& json_path) {
-    int box_size = 8732; // j["box_size"].get<int>();
-    int class_size = 48; // j["class_size"].get<int>();
-    int layers = 6;
-
-    const int l1_size = 16 * 38 * 38;
-    const int c1_size = 192 * 38 * 38;
-    const int l2_size = 24 * 19 * 19;
-    const int c2_size = 288 * 19 * 19;
-    const int l3_size = 24 * 10 * 10;
-    const int c3_size = 288 * 10 * 10;
-    const int l4_size = 24 * 5 * 5;
-    const int c4_size = 288 * 5 * 5;
-    const int l5_size = 16 * 3 * 3;
-    const int c5_size = 192 * 3 * 3;
-    const int l6_size = 16 * 1 * 1;
-    const int c6_size = 192 * 1 * 1;
-
-    std::vector<std::array<int, 3>> l_dims({
-            {16, 38, 38},
-            {24, 19, 19},
-            {24, 10, 10},
-            {24, 5, 5},
-            {16, 3, 3},
-            {16, 1, 1}
-        });
-
-    std::vector<std::array<int, 3>> c_dims({
-        {192, 38, 38},
-        {288, 19, 19},
-        {288, 10, 10},
-        {288, 5, 5},
-        {192, 3, 3},
-        {192, 1, 1}
-    });
-
-    int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
-    int mem_pointer;
-
-    std::vector<float> mem(mem_size);
-    float value;
-    int count = 0;
-    string data_path = json_path;
-    data_path.append("data.txt");
-    std::ifstream infile(data_path);
-    while (infile >> value) {
-        mem[count] = value;
-        count++;
-    }
-
-    std::vector<float> mem_l;
-    std::vector<float> mem_c;
-    //mem.insert(mem.begin(), fp, fp + 12);
-    //memcpy(&mem[0], fp, 12 * sizeof(float));
-    Test test;
-    Decoder decoder;
-    decoder.init_default_boxes300();
-
-    //todo: speed
-    auto start = std::chrono::high_resolution_clock::now();
-    mem_pointer = 0;
-    for (int i = 0; i < layers; i++) {
-        int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
-        int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
-        
-        Eigen::TensorMap<Eigen::Tensor<float, 3>> l1_tensor(&mem[mem_pointer], l_dims[i][1], l_dims[i][0], l_dims[i][2]);
-        Eigen::Tensor<float, 3> l_shuffle = l1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
-        
-        Eigen::MatrixXf view2d_l = Eigen::Map<Eigen::MatrixXf>(l_shuffle.data(), (int)(size_l / 4), 4);
-        view2d_l.transposeInPlace();
-        //memcpy(&mem[0], fp, 12 * sizeof(float));
-        mem_l.insert(mem_l.end(), view2d_l.data(), view2d_l.data() + size_l);
-
-        mem_pointer += size_l;
-        Eigen::TensorMap<Eigen::Tensor<float, 3>> c1_tensor(&mem[mem_pointer], c_dims[i][1], c_dims[i][0], c_dims[i][2]);
-        Eigen::Tensor<float, 3> c_shuffle = c1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
-
-        Eigen::MatrixXf view2d_c = Eigen::Map<Eigen::MatrixXf>(c_shuffle.data(), (int)(size_c / class_size), class_size);
-        view2d_c.transposeInPlace();
-        mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
-
-        mem_pointer += size_c;
-    }
-    
-    Eigen::MatrixXf locations = Eigen::Map<Eigen::MatrixXf>(mem_l.data(), 4, box_size);
-    Eigen::MatrixXf scores = Eigen::Map<Eigen::MatrixXf>(mem_c.data(), class_size, box_size);
-
-    locations.transposeInPlace();
-    scores.transposeInPlace();
-
-    auto finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time shuffle: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
-
-    //Eigen::TensorMap<Eigen::Tensor<float, 3>> img_tensor((float*)data, 3, height, width);
-
-    /*json j;
-    std::ifstream ifs;
-    string json_p = json_path;
-    json_p.append("ssd_output.json");
-    std::cout << json_p << std::endl;
-    ifs.open(json_p, std::ifstream::in);
-    ifs >> j;
-
-
-    json locations_j = j["locations"];
-    json classes_j = j["scores"];
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<std::vector<float>> locations_2dv(4);
-    std::vector<std::vector<float>> scores_2dv(class_size);
-
-    for (int i = 0; i < 4; ++i) {
-        locations_2dv[i] = locations_j[i].get<std::vector<float>>();
-    }
-
-    for (int i = 0; i < class_size; ++i) {
-        scores_2dv[i] = classes_j[i].get<std::vector<float>>();
-    }
-
-    finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time JSON to Vectors: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
-
-    start = std::chrono::high_resolution_clock::now();
-    Eigen::MatrixXf locations2 = ::utils::vector2d_to_eigenmatrix(locations_2dv, 4, box_size);
-    locations2.transposeInPlace();
-
-    Eigen::MatrixXf scores2 = ::utils::vector2d_to_eigenmatrix(scores_2dv, class_size, box_size);
-    scores2.transposeInPlace();
-
-    finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time Vectors to Eigen: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
-
-    for (int i = 0; i < locations.rows(); ++i) {
-        for (int j = 0; j < locations.cols(); ++j) {
-            float v1 = locations(i, j);
-            float v2 = locations2(i, j);
-            if (abs(v1 - v2) > 0.01)
-                std::cout << i << ":" << j << std::endl;
-        }
-    }*/
-
-    start = std::chrono::high_resolution_clock::now();
-    vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
-    finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Complete Time decode batch: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
-
-    cv::Mat image;
-    image = cv::imread(image_path, cv::IMREAD_COLOR);
-
-    int width = image.cols;
-    int height = image.rows;
-
-    for (auto label : output) {
-        auto p1 = cv::Point(label.coordinates[0] * width, label.coordinates[1] * height);
-        auto p2 = cv::Point(label.coordinates[2] * width, label.coordinates[3] * height);
-        rectangle(image, p1, p2, cv::Scalar(0, 0, 255), 2);
-    }
-
-    return image;
-}
-
-void cam()
-{
-    cv::VideoCapture cap;
-    if (!cap.open(0))   
-        return;
-    cv::namedWindow("cam",1);
-    for(;;)
-    {
-        cv::Mat frame;
-        cap >> frame; // get a new frame from camera
-        cv::imshow("cam", frame);
-        if(cv::waitKey(30) >= 0) break;
-    }
-    return;
 }
 
 void send_cam(const char* ip, int port)

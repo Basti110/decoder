@@ -1,3 +1,4 @@
+#pragma once
 #include <Eigen/Dense>
 #include <vector>
 #include <iostream>
@@ -50,8 +51,8 @@ namespace utils {
 	}
 
 	template<typename _Scalar>
-	static Eigen::Matrix<_Scalar, -1, -1> get_rows_from_idx_vec(const Eigen::Matrix<_Scalar, -1, -1>& values, const vector<int>& idx_vec) {
-		MatrixXf new_values(idx_vec.size(), values.cols());
+	static Eigen::Matrix<_Scalar, -1, -1> get_rows_from_idx_vec(const Eigen::Matrix<_Scalar, -1, -1>& values, const std::vector<int>& idx_vec) {
+        Eigen::MatrixXf new_values(idx_vec.size(), values.cols());
 		for (int i = 0; i < idx_vec.size(); ++i)
 			new_values.row(i) = values.row(idx_vec[i]);
 		return new_values;
