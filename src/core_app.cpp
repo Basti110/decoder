@@ -68,7 +68,7 @@ void CoreApp::start_decoder_test(const std::string& image_path, const std::strin
         {288, 5, 5},
         {192, 3, 3},
         {192, 1, 1}
-        });
+    });
 
     int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
     int mem_pointer;
@@ -82,6 +82,9 @@ void CoreApp::start_decoder_test(const std::string& image_path, const std::strin
         mem[count] = value;
         count++;
     }
+
+    Quantizer quant(5, 11);
+    quant.unquant(&mem[0], mem_size);
 
     std::vector<float> mem_l;
     std::vector<float> mem_c;
@@ -115,19 +118,22 @@ void CoreApp::start_decoder_test(const std::string& image_path, const std::strin
 
         mem_pointer += size_c;
     }
+    log_timer("Time shuffle 1: %ims");
 
+    set_timer();
     Eigen::MatrixXf locations = Eigen::Map<Eigen::MatrixXf>(mem_l.data(), 4, box_size);
     Eigen::MatrixXf scores = Eigen::Map<Eigen::MatrixXf>(mem_c.data(), class_size, box_size);
 
     locations.transposeInPlace();
     scores.transposeInPlace();
+    log_timer("Time shuffle 2: %ims");
 
-    auto finish = std::chrono::high_resolution_clock::now();
-    log_timer("Time shuffle: %ims");
+    //auto finish = std::chrono::high_resolution_clock::now();
+    
 
     set_timer();
     vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
-    finish = std::chrono::high_resolution_clock::now();
+    //finish = std::chrono::high_resolution_clock::now();
     log_timer("Complete Time decode batch: %ims");
 
     cv::Mat image;
@@ -158,7 +164,7 @@ void CoreApp::start_camera_test(bool use_network)
 {
     cv::Mat frame;
     cv::VideoCapture cap;
-    cap.open("/home/basti/data/daten/aquaman_2018.mkv");
+    cap.open("E:\\aquaman_2018.mkv");
 
     if (!cap.isOpened()) {
         std::cerr << "ERROR! Unable to open camera\n";
@@ -190,13 +196,22 @@ void CoreApp::start_camera_test(bool use_network)
 
 void CoreApp::start_app()
 {
+    cv::Mat image;
+    image = cv::imread("", cv::IMREAD_COLOR);
+    cv::resize(image, image, cv::Size(300, 300));
+    
+
 }
 
 bool CoreApp::open_socket(std::string host, int port)
 {
     struct sockaddr_in serverAddr;
     int addrLen = sizeof(struct sockaddr_in);
-    mSocket = socket(PF_INET, SOCK_STREAM, 0);
+
+    WSADATA Data;
+    WSAStartup(MAKEWORD(2, 2), &Data); // 2.2 version
+    mSocket = socket(AF_INET, SOCK_STREAM, 0);
+
 
     if (mSocket < 0) {
         std::cerr << "socket() failed" << std::endl;

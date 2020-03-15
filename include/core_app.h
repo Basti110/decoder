@@ -24,6 +24,11 @@ private:
     bool mSocketReady = false;
     int mSocket = 0;
     std::vector<uchar> mBuffer;
+    
+#ifdef _WIN32
+    std::chrono::time_point<std::chrono::steady_clock> mStartTime;
+#else
     std::chrono::time_point<std::chrono::system_clock> mStartTime;
+#endif
 };
 

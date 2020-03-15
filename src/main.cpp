@@ -3,6 +3,7 @@
 #include <fstream>
 #include <chrono>
 #include <fstream>
+#include <filesystem>
 
 
 #ifdef _WIN32
@@ -22,8 +23,9 @@
 #include "../include/decoder.h"
 #include "../include/utils.h"
 #include "../include/Test.h"
-//#include "../include/quantizer.h"
+#include "../include/quantizer.h"
 #include "../include/core_app.h"
+#include "../include//chunk_utils.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
 
@@ -35,6 +37,7 @@ using string = std::string;
 void test();
 void send_cam(const char* ip, int port);
 void send_frame(const char* ip, int port, cv::Mat frame);
+void img_to_data(std::string path);
 
 int main(int argc, char* argv[])
 {
@@ -45,13 +48,24 @@ int main(int argc, char* argv[])
     #else
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
+    
+    string json_path = dir_path + "/../data/config.json";
+    string glob_path = dir_path + "/../data/conv2d_0.glob";
+    ChunkContainer chunk_container;
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    //chunk_container.init_chunk(json_path);
+    //chunk_container.read_data_from_glob(glob_path);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+    img_to_data(dir_path);
     //todo
     //dir_path.append("/../data/data.txt");
     string data_path = dir_path;
-    data_path.append("/../data/data.txt");
+    data_path.append("/../input.dat");
 
     //string json_path = string(dir_path).append("ssd_output.json"); // ssd_output.json");
-    string image_path = string(dir_path).append("/../data/000000026564.jpg");
+    string image_path = string(dir_path).append("/../data/000000004057.jpg");
 
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();
@@ -242,6 +256,59 @@ void send_frame(const char* ip, int port, cv::Mat frame)
     }
 }
 
+string type2str(int type) {
+    string r;
+
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+    switch (depth) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+    }
+
+    r += "C";
+    r += (chans + '0');
+
+    return r;
+}
+
+void img_to_data(std::string path) {
+    std::string img_path = path + "/../data/imgs/20200308_170823.jpg";
+    std::string data_path = path + "/../data/img_desk.dat";
+    std::string template_path = path + "/../data/conv2d_template.dat";
+
+    cv::Mat cv_img = cv::imread(img_path, cv::IMREAD_COLOR);
+    cv::resize(cv_img, cv_img, cv::Size(300, 300));
+    cv_img.convertTo(cv_img, CV_32FC3);
+    string r = type2str(cv_img.type());
+    Quantizer quant(5, 11);
+    quant.normalize_c3(cv_img.ptr<float>(), 300 * 300 * 3, { 0.229, 0.224, 0.225 }, { 0.485, 0.456, 0.406 });
+    quant.to_quantized_int(cv_img.ptr<float>(), 300 * 300 * 3);
+
+    
+    std::filesystem::copy(template_path, data_path, std::filesystem::copy_options::overwrite_existing);
+
+    std::ofstream outfile(data_path, std::ios_base::app | std::ios_base::out);
+    std::vector<cv::Mat> split_channel;
+    cv::split(cv_img, split_channel);
+    for (int y = 0; y < 300; ++y) {
+        for (int c = 2; c >= 0; --c) {
+            for (int x = 0; x < 300; ++x) {
+                //std::cout << split_channel[c].at<float>(y, x) << " ";            
+                outfile << "0x" << std::hex << (short)split_channel[c].at<float>(y, x) << "\n";
+            }
+        }
+    }
+    outfile.close();
+}
+
 void test() {
     int height = 2;
     int width = 2;
@@ -249,11 +316,28 @@ void test() {
     float norm_mean[] = { 0.485f, 0.456f, 0.406f };
     float norm_std[] = { 0.229f, 0.224f, 0.225f };
 
-    float data_t1[24] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120 };
+    float data_t1[24] = { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.10, 0.11, 0.12, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.100, 0.110, 0.120 };
     float data_t2[24] = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000 };
 
-    //cv::Mat cv_img = cv::Mat(height, width, CV_32FC3, data);
-    //std::cout << cv::format(cv_img, cv::Formatter::FMT_PYTHON) << std::endl << std::endl;
+    std::cout << std::setfill('0') << std::setw(2) << std::right << std::hex << -10 << std::endl;
+    std::cout << std::hex << (short)-17 << std::endl;
+    std::cout << std::hex << 10 << std::endl;
+    std::cout << std::hex << 17 << std::endl;
+    
+    Quantizer quant(5, 11);
+    cv::Mat cv_img = cv::Mat(2, 4, CV_32FC3, data_t1);
+    quant.to_quantized_int(cv_img.ptr<float>(), 24);
+
+    std::vector<cv::Mat> split_channel;
+    cv::split(cv_img, split_channel);
+    for (int y = 0; y < 2; ++y) {
+        for (int c = 2; c >= 0; --c) {
+            for (int x = 0; x < 4; ++x) {
+                std::cout << split_channel[c].at<float>(y, x) << " ";
+            }
+        }
+    }
+    std::cout << cv::format(cv_img, cv::Formatter::FMT_PYTHON) << std::endl << std::endl;
 
     Eigen::TensorMap<Eigen::Tensor<float, 3>> img_tensor1((float*)data_t1, 3, 4, 2);
     Eigen::TensorMap<Eigen::Tensor<float, 3>> img_tensor2((float*)data_t2, 2, 6, 2);

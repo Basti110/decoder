@@ -1,6 +1,7 @@
 #include <math.h>
 #include <algorithm>
 #include "../include/quantizer.h"
+#include <iostream>
 
 
 Quantizer::Quantizer(int intbits, int fracbits, int gatebits, RoundMode rndmode)
@@ -15,9 +16,31 @@ Quantizer::Quantizer(int intbits, int fracbits, int gatebits, RoundMode rndmode)
     mScaleFactor = pow(2, mFracBits);
 }
 
-std::vector<int16_t> Quantizer::to_quantized_int(float* data, int size)
+// Normalize data for 3 channel. STD and MEAN in RGB format. 
+// Input: [0, 255] => Transform: [0, 1] 
+// Output: (Transform[channel] - mean[channel]) / std[channel] 
+void Quantizer::normalize_c3(float* data, int size, std::vector<float> std, std::vector<float> mean)
 {
-    std::vector<int16_t> quant_integer(size);
+    if (std.size() != 3)
+        return;
+
+    if (mean.size() != 3)
+        return;
+
+    if (size % 3 != 0)
+        return;
+
+    for (int i = 0; i < size; i += 3) {
+        //std::cout << data[i] << " " << data[i + 1] << " " << data[i + 2] << std::endl;
+        data[i] = (data[i] / 255.0f - mean[2]) / std[2];
+        data[i + 1] = (data[i + 1] / 255.0f - mean[1]) / std[1];
+        data[i + 2] = (data[i + 2] / 255.0f - mean[0]) / std[0];
+        //std::cout << data[i] << " " << data[i + 1] << " " << data[i + 2] << std::endl << std::endl;
+    }
+}
+
+void Quantizer::to_quantized_int(float* data, int size)
+{
     for (int i = 0; i < size; ++i) {
         int scaled_value;
         if(mRndMode == TRUNK) 
@@ -25,7 +48,15 @@ std::vector<int16_t> Quantizer::to_quantized_int(float* data, int size)
         else
             scaled_value = (int)round(data[i] * mScaleFactor);
 
-        quant_integer[i] = (int16_t)std::max(std::min(scaled_value, mMaxVal), mMinVal);
+        data[i] = (float)std::max(std::min(scaled_value, mMaxVal), mMinVal);
     }
-    return quant_integer;
+    return;
+}
+
+void Quantizer::unquant(float* data, int size)
+{
+    for (int i = 0; i < size; ++i) {
+        data[i] = data[i] / mScaleFactor;
+    }
+    return;
 }
