@@ -7,10 +7,9 @@
 using json = nlohmann::json;
 using string = std::string;
 
-#define VSIZE 4
-
-bool ChunkContainer::init_chunk(std::string path_json)
+bool ChunkContainer::init_chunk(std::string path_json, int vsize)
 {
+    mVSize = vsize;
     json j;
     std::ifstream ifs;
     std::cout << path_json << std::endl;
@@ -74,17 +73,17 @@ bool ChunkContainer::read_data_from_glob(std::string path_glob, bool use_ofmap, 
         int addr = (int)stoul(addr_str, 0, 16);
             
         if (mem_len >= max_len || (addr != last_addr + 1 && last_addr != -1)) {
-            read_data_from_mem(mem_ptr, last_addr * VSIZE, mem_len);
+            read_data_from_mem(mem_ptr, last_addr * mVSize, mem_len);
             mem_len = 0;
         }
 
-        for (int i = 0; i < VSIZE; i++) {
+        for (int i = 0; i < mVSize; i++) {
             string word_str = value_str.substr(i * 4, 4);
             int word_value = stoi(word_str, 0, 16);
-            mem_ptr[mem_len + VSIZE - (i + 1)] = word_value;
+            mem_ptr[mem_len + mVSize - (i + 1)] = word_value;
         }
 
-        mem_len += VSIZE;
+        mem_len += mVSize;
         last_addr = addr;
         total_lines++;
     }

@@ -25,8 +25,42 @@
 
 
 using MatrixXf = Eigen::MatrixXf;
-//using json = nlohmann::json;
 using string = std::string;
+
+const int box_size = 8732; // j["box_size"].get<int>();
+const int class_size = 48; // j["class_size"].get<int>();
+const int layers = 6;
+
+const int l1_size = 16 * 38 * 38;
+const int c1_size = 192 * 38 * 38;
+const int l2_size = 24 * 19 * 19;
+const int c2_size = 288 * 19 * 19;
+const int l3_size = 24 * 10 * 10;
+const int c3_size = 288 * 10 * 10;
+const int l4_size = 24 * 5 * 5;
+const int c4_size = 288 * 5 * 5;
+const int l5_size = 16 * 3 * 3;
+const int c5_size = 192 * 3 * 3;
+const int l6_size = 16 * 1 * 1;
+const int c6_size = 192 * 1 * 1;
+
+const std::vector<std::array<int, 3>> l_dims({
+    {16, 38, 38},
+    {24, 19, 19},
+    {24, 10, 10},
+    {24, 5, 5},
+    {16, 3, 3},
+    {16, 1, 1}
+});
+
+const std::vector<std::array<int, 3>> c_dims({
+    {192, 38, 38},
+    {288, 19, 19},
+    {288, 10, 10},
+    {288, 5, 5},
+    {192, 3, 3},
+    {192, 1, 1}
+});
 
 CoreApp::CoreApp(std::string host, int port)
 {
@@ -35,41 +69,6 @@ CoreApp::CoreApp(std::string host, int port)
 
 void CoreApp::start_decoder_test(const std::string& image_path, const std::string& data_path, bool use_network)
 {
-    int box_size = 8732; // j["box_size"].get<int>();
-    int class_size = 48; // j["class_size"].get<int>();
-    int layers = 6;
-
-    const int l1_size = 16 * 38 * 38;
-    const int c1_size = 192 * 38 * 38;
-    const int l2_size = 24 * 19 * 19;
-    const int c2_size = 288 * 19 * 19;
-    const int l3_size = 24 * 10 * 10;
-    const int c3_size = 288 * 10 * 10;
-    const int l4_size = 24 * 5 * 5;
-    const int c4_size = 288 * 5 * 5;
-    const int l5_size = 16 * 3 * 3;
-    const int c5_size = 192 * 3 * 3;
-    const int l6_size = 16 * 1 * 1;
-    const int c6_size = 192 * 1 * 1;
-
-    std::vector<std::array<int, 3>> l_dims({
-            {16, 38, 38},
-            {24, 19, 19},
-            {24, 10, 10},
-            {24, 5, 5},
-            {16, 3, 3},
-            {16, 1, 1}
-        });
-
-    std::vector<std::array<int, 3>> c_dims({
-        {192, 38, 38},
-        {288, 19, 19},
-        {288, 10, 10},
-        {288, 5, 5},
-        {192, 3, 3},
-        {192, 1, 1}
-    });
-
     int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
     int mem_pointer;
 
@@ -171,7 +170,7 @@ void CoreApp::start_camera_test(bool use_network)
         return;
     }
 
-    std::vector<uchar> buf;
+    //std::vector<uchar> buf;
     int bytes = 0;
     for (;;)
     {
@@ -194,13 +193,99 @@ void CoreApp::start_camera_test(bool use_network)
     }
 }
 
-void CoreApp::start_app()
+void CoreApp::start_app(int vsize)
 {
-    cv::Mat image;
-    image = cv::imread("", cv::IMREAD_COLOR);
-    cv::resize(image, image, cv::Size(300, 300));
+    int img_size = 300;
+    int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
+    int mem_pointer;
+    short* input_data = new short[img_size * img_size * 3];
     
+    std::vector<float> mem_l;
+    std::vector<float> mem_c;
+    std::vector<float> mem(mem_size);
 
+    Decoder decoder;
+    Quantizer quant(5, 11);
+    decoder.init_default_boxes300();
+    
+    float value;
+    int count = 0;
+
+    cv::Mat frame;
+    cv::VideoCapture cap;
+    cap.open("E:\\aquaman_2018.mkv");
+
+    if (!cap.isOpened()) {
+        LOG_ERROR("ERROR! Unable to open camera");
+        return;
+    }
+
+    for (;;)
+    {
+
+        cap.read(frame);
+        if (frame.empty()) {
+            LOG_ERROR("ERROR! blank frame grabbed");
+            break;
+        }
+
+        img_to_data(input_data, img_size, frame);
+        // ---------- DRAM Access ----------------
+        // - input_data to dram
+        // - wait until core is finished
+        // - data to mem 
+        // ---------------------------------------
+        quant.unquant(&mem[0], mem_size);
+
+
+        set_timer();
+        mem_pointer = 0;
+        for (int i = 0; i < layers; i++) {
+            int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
+            int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
+
+            Eigen::TensorMap<Eigen::Tensor<float, 3>> l1_tensor(&mem[mem_pointer], l_dims[i][1], l_dims[i][0], l_dims[i][2]);
+            Eigen::Tensor<float, 3> l_shuffle = l1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
+
+            Eigen::MatrixXf view2d_l = Eigen::Map<Eigen::MatrixXf>(l_shuffle.data(), (int)(size_l / 4), 4);
+            view2d_l.transposeInPlace();
+            mem_l.insert(mem_l.end(), view2d_l.data(), view2d_l.data() + size_l);
+
+            mem_pointer += size_l;
+            Eigen::TensorMap<Eigen::Tensor<float, 3>> c1_tensor(&mem[mem_pointer], c_dims[i][1], c_dims[i][0], c_dims[i][2]);
+            Eigen::Tensor<float, 3> c_shuffle = c1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
+
+            Eigen::MatrixXf view2d_c = Eigen::Map<Eigen::MatrixXf>(c_shuffle.data(), (int)(size_c / class_size), class_size);
+            view2d_c.transposeInPlace();
+            mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
+
+            mem_pointer += size_c;
+        }
+        log_timer("Time shuffle 1: %ims");
+
+        set_timer();
+        Eigen::MatrixXf locations = Eigen::Map<Eigen::MatrixXf>(mem_l.data(), 4, box_size);
+        Eigen::MatrixXf scores = Eigen::Map<Eigen::MatrixXf>(mem_c.data(), class_size, box_size);
+
+        locations.transposeInPlace();
+        scores.transposeInPlace();
+        log_timer("Time shuffle 2: %ims");    
+
+
+        set_timer();
+        vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
+        log_timer("Complete Time decode batch: %ims");
+           
+        int width = frame.cols;
+        int height = frame.rows;
+        for (auto label : output) {
+            auto p1 = cv::Point(label.coordinates[0] * width, label.coordinates[1] * height);
+            auto p2 = cv::Point(label.coordinates[2] * width, label.coordinates[3] * height);
+            rectangle(frame, p1, p2, cv::Scalar(0, 0, 255), 2);
+        }
+        send_frame(frame);
+    }
+    
 }
 
 bool CoreApp::open_socket(std::string host, int port)
@@ -289,4 +374,26 @@ bool CoreApp::send_frame(cv::Mat& frame)
         return false;
     }
     std::cout << "end" << std::endl;
+}
+
+void CoreApp::img_to_data(short* data_ptr, int size, cv::Mat& img)
+{
+    cv::Mat img_resize;
+    cv::resize(img, img_resize, cv::Size(size, size));
+    img_resize.convertTo(img_resize, CV_32FC3);
+    Quantizer quant(5, 11);
+    quant.normalize_c3(img_resize.ptr<float>(), 300 * 300 * 3, { 0.229, 0.224, 0.225 }, { 0.485, 0.456, 0.406 });
+    quant.to_quantized_int(img_resize.ptr<float>(), 300 * 300 * 3);
+
+    int count = 0;
+    std::vector<cv::Mat> split_channel;
+    cv::split(img_resize, split_channel);
+    for (int y = 0; y < 300; ++y) {
+        for (int c = 2; c >= 0; --c) {
+            for (int x = 0; x < 300; ++x) {
+                data_ptr[count] = (short)split_channel[c].at<float>(y, x);
+                count++;
+            }
+        }
+    }
 }

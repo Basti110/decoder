@@ -35,13 +35,11 @@ using json = nlohmann::json;
 using string = std::string;
 
 void test();
-void send_cam(const char* ip, int port);
-void send_frame(const char* ip, int port, cv::Mat frame);
-void img_to_data(std::string path);
+void img_to_data(std::string img_path, std::string out_path, std::string template_path);
 
 int main(int argc, char* argv[])
 {
-    //test();
+    
     string file_path = __FILE__;
     #ifdef _WIN32
         string dir_path = file_path.substr(0, file_path.rfind("\\"));
@@ -51,22 +49,26 @@ int main(int argc, char* argv[])
     
     string json_path = dir_path + "/../data/config.json";
     string glob_path = dir_path + "/../data/conv2d_0.glob";
-    ChunkContainer chunk_container;
-
+    string image_path = dir_path + "/../data/000000004057.jpg";
+    string out_path = dir_path + "/../data/img_desk.dat";
+    string template_path = dir_path + "/../data/conv2d_template.dat";
+    string data_path = dir_path + "/../input.dat";
+    int vsize = 4;
+    int port = 8485;
+    string ip = "127.0.0.1";
+    bool network = false;
+    /* ----- Test Glob Select ---------
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    //chunk_container.init_chunk(json_path);
-    //chunk_container.read_data_from_glob(glob_path);
+    ChunkContainer chunk_container;
+    chunk_container.init_chunk(json_path);
+    chunk_container.read_data_from_glob(glob_path);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
-    img_to_data(dir_path);
-    //todo
-    //dir_path.append("/../data/data.txt");
-    string data_path = dir_path;
-    data_path.append("/../input.dat");
+    */
 
-    //string json_path = string(dir_path).append("ssd_output.json"); // ssd_output.json");
-    string image_path = string(dir_path).append("/../data/000000004057.jpg");
-
+    //test();
+    //img_to_data(image_path, out_path, template_path);
+   
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();
     options
@@ -78,13 +80,12 @@ int main(int argc, char* argv[])
         ("d, data", string("data input file for test data. Default: ").append(data_path), cxxopts::value<string>())
         ("v, verbose", "Verbose \"info()\" output")
         ("host", string("IP, stream over network"), cxxopts::value<string>())
-        ("p, port", string("Port, default: 8485"), cxxopts::value<int>())
+        ("p, port", string("Port. Default: ").append(std::to_string(port)), cxxopts::value<int>())
         ("i, image", string("Path to image for test mode. Default: ").append(image_path), cxxopts::value<string>());
+        ("vsize", string("VSIZE. Default: ").append(std::to_string(vsize)), cxxopts::value<int>());
 
     auto result = options.parse(argc, argv);
-    int port = 8485;
-    string ip;
-    bool network = false;
+
 
     if(result.count("host")) {
         std::cout << "network mode" << std::endl;
@@ -93,6 +94,10 @@ int main(int argc, char* argv[])
         if(result.count("p")) 
             port = result["p"].as<int>();
     }
+
+    if (result.count("vsize"))
+        vsize = result["vsize"].as<int>();
+
 
     if (result.count("h")) {
         std::cout << options.help({ "" }) << std::endl;
@@ -116,6 +121,12 @@ int main(int argc, char* argv[])
             app.open_socket(ip, port);
 
         app.start_decoder_test(image_path, data_path, network);
+    } 
+    else {
+        CoreApp app = CoreApp();
+        app.open_socket(ip, port);
+        app.start_app(vsize);
+        //app.start_decoder_test(image_path, data_path, network);
     }
 
     if (result.count("c")) {
@@ -151,11 +162,7 @@ string type2str(int type) {
     return r;
 }
 
-void img_to_data(std::string path) {
-    std::string img_path = path + "/../data/imgs/20200308_170823.jpg";
-    std::string data_path = path + "/../data/img_desk.dat";
-    std::string template_path = path + "/../data/conv2d_template.dat";
-
+void img_to_data(std::string img_path, std::string out_path, std::string template_path) {
     cv::Mat cv_img = cv::imread(img_path, cv::IMREAD_COLOR);
     cv::resize(cv_img, cv_img, cv::Size(300, 300));
     cv_img.convertTo(cv_img, CV_32FC3);
@@ -165,9 +172,9 @@ void img_to_data(std::string path) {
     quant.to_quantized_int(cv_img.ptr<float>(), 300 * 300 * 3);
 
     
-    std::filesystem::copy(template_path, data_path, std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::copy(template_path, out_path, std::filesystem::copy_options::overwrite_existing);
 
-    std::ofstream outfile(data_path, std::ios_base::app | std::ios_base::out);
+    std::ofstream outfile(out_path, std::ios_base::app | std::ios_base::out);
     std::vector<cv::Mat> split_channel;
     cv::split(cv_img, split_channel);
     for (int y = 0; y < 300; ++y) {

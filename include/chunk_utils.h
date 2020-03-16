@@ -45,7 +45,7 @@ private:
 class ChunkContainer
 {
     public:
-        bool init_chunk(std::string path_json);
+        bool init_chunk(std::string path_json, int vsize = 4);
         bool read_data_from_glob(std::string path_glob, bool use_ofmap = false, int first_chunk = 0, int last_chunk = 36);
         bool write_data_on_addr(int addr);
         bool check_ofmap(int ofmap, int len = -1);
@@ -55,6 +55,7 @@ class ChunkContainer
         void set_chunk_active(bool use_ofmap, int first_chunk, int last_chunk);
 
     private:
+        int mVSize;
         bool mIsInit = 0;
         std::vector<Chunk> mChunks;
 };
