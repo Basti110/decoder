@@ -293,8 +293,10 @@ bool CoreApp::open_socket(std::string host, int port)
     struct sockaddr_in serverAddr;
     int addrLen = sizeof(struct sockaddr_in);
 
+#ifdef _WIN32
     WSADATA Data;
     WSAStartup(MAKEWORD(2, 2), &Data); // 2.2 version
+#endif
     mSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 
