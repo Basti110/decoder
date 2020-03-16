@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     
     string json_path = dir_path + "/../data/config.json";
     string glob_path = dir_path + "/../data/conv2d_0.glob";
-    string image_path = dir_path + "/../data/000000004057.jpg";
+    string image_path = dir_path + "/../data/imgs/img_0.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
     string data_path = dir_path + "/../input.dat";
