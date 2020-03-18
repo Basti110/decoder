@@ -28,6 +28,7 @@ public:
     //Return how much data chunk must read.
     //Return -1 if der is no data in range(addr, len) for this chunk
     int address_in_range(int addr, int len);
+    bool is_complete();
 
     friend class ChunkContainer;
 
@@ -36,6 +37,7 @@ private:
     int read_map(int* data_ptr, int glob_addr, int len, ChunkMap& map);
 
 private:
+    int mChunkNumber;
     ChunkMap mOfMap;
     ChunkMap mIfMap;
     ChunkMap mFilters;
@@ -48,7 +50,8 @@ class ChunkContainer
         bool init_chunk(std::string path_json, int vsize = 4);
         bool read_data_from_glob(std::string path_glob, bool use_ofmap = false, int first_chunk = 0, int last_chunk = 36);
         bool write_data_on_addr(int addr);
-        bool check_ofmap(int ofmap, int len = -1);
+        bool check_ofmap(int* ofmap, int chunk, int eps, int len = -1);
+        bool is_complete();
 
     private:
         bool read_data_from_mem(int* ptr, int glob_addr, int len);

@@ -17,11 +17,23 @@
 #define LOG_ERROR_IF(Pred, X) if(Pred) LOG_ERROR(X)
 #endif 
 
+#ifndef LOG_ERROR_IF_RETURN_FALSE
+#define LOG_ERROR_IF_RETURN_FALSE(Pred, X) if(Pred) { LOG_ERROR(X); return false;}
+#endif 
+
+#ifndef LOG_ERROR_RETURN_FALSE
+#define LOG_ERROR_RETURN_FALSE(X) { LOG_ERROR(X); return false; }
+#endif 
+
+#ifndef LOG_ERROR_RETURN
+#define LOG_ERROR_RETURN(X) { LOG_ERROR(X); return }
+#endif 
+
 namespace utils {
     static bool verbose = VERBOSE;
 
 	static void log_error(std::string e, const char* file, int line, const char* func) {
-		std::cout << "ERROR: \"" << e << "\" in file " << file << "::" << line << " " << func << "(...)" << std::endl;
+        std::cout << "ERROR: \"" << e << std::endl; // << "\" in file " << file << "::" << line << " " << func << "(...)" << std::endl;
 	}
 
     template<typename ... Args>
@@ -49,6 +61,16 @@ namespace utils {
 		}
 		return mat;
 	}
+
+    template<typename ... Args>
+    std::string string_format(const std::string& format, Args ... args)
+    {
+        size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
+        if (size <= 0) { throw std::runtime_error("Error during formatting."); }
+        std::unique_ptr<char[]> buf(new char[size]);
+        snprintf(buf.get(), size, format.c_str(), args ...);
+        return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+    }
 
 	template<typename _Scalar>
 	static Eigen::Matrix<_Scalar, -1, -1> get_rows_from_idx_vec(const Eigen::Matrix<_Scalar, -1, -1>& values, const std::vector<int>& idx_vec) {

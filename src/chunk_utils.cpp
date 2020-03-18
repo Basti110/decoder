@@ -27,6 +27,7 @@ bool ChunkContainer::init_chunk(std::string path_json, int vsize)
         chunk.mOfMap.mLenght = json_chunk["length_ofmaps_conv"].get<int>();
         chunk.mIfMap.mStartAddr = chunk.mFilters.mStartAddr + chunk.mFilters.mLenght;
         chunk.mIfMap.mLenght = json_chunk["length_ifmaps"].get<int>();
+        chunk.mChunkNumber = i;
         mChunks.push_back(chunk);
     }
     return mIsInit = true;
@@ -62,7 +63,6 @@ bool ChunkContainer::read_data_from_glob(std::string path_glob, bool use_ofmap, 
 
     string line;
     int last_addr = -1;
-
     int total_lines = 0;
     while (std::getline(glob_file, line))
     {      
@@ -72,8 +72,9 @@ bool ChunkContainer::read_data_from_glob(std::string path_glob, bool use_ofmap, 
         string value_str = data_line.substr(sep + 1);
         int addr = (int)stoul(addr_str, 0, 16);
             
-        if (mem_len >= max_len || (addr != last_addr + 1 && last_addr != -1)) {
+        if (mem_len >= max_len || (addr != last_addr + int(mem_len / mVSize))) {
             read_data_from_mem(mem_ptr, last_addr * mVSize, mem_len);
+            last_addr = addr;
             mem_len = 0;
         }
 
@@ -83,14 +84,36 @@ bool ChunkContainer::read_data_from_glob(std::string path_glob, bool use_ofmap, 
             mem_ptr[mem_len + mVSize - (i + 1)] = word_value;
         }
 
-        mem_len += mVSize;
-        last_addr = addr;
+        mem_len += mVSize;   
         total_lines++;
     }
 
     if (mem_len > 0)
-        read_data_from_mem(mem_ptr, last_addr, mem_len);
+        read_data_from_mem(mem_ptr, last_addr * mVSize, mem_len);
 
+    return true;
+}
+
+bool ChunkContainer::check_ofmap(int* ofmap, int chunk, int eps, int len)
+{
+    LOG_ERROR_IF_RETURN_FALSE(chunk >= mChunks.size(), "Chunk not in range");
+
+    LOG_ERROR_IF_RETURN_FALSE(mChunks[chunk].mOfMap.mFillPtr == mChunks[chunk].mOfMap.mDataPtr, "Map not filled");
+
+    LOG_ERROR_IF_RETURN_FALSE(mChunks[chunk].mOfMap.mLenght == len, "Lenght missmatch");
+
+    for (int i = 0; i < len; ++i) {
+        if (std::abs(mChunks[chunk].mOfMap.mDataPtr[i] - ofmap[i]) <= eps)
+            return false;
+    }
+}
+
+bool ChunkContainer::is_complete()
+{
+    for (auto chunk : mChunks) {
+        if (!chunk.is_complete())
+            return false;
+    }
     return true;
 }
 
@@ -98,7 +121,8 @@ bool ChunkContainer::read_data_from_mem(int* ptr, int glob_addr, int len)
 {
     int cur_addr = glob_addr;
     int cur_len = len;
-    for (auto chunk : mChunks) {
+
+    for (Chunk& chunk : mChunks) {
         int read_len = chunk.address_in_range(cur_addr, len);
 
         if (read_len == -1)
@@ -128,11 +152,11 @@ void ChunkContainer::set_chunk_active(bool use_ofmap, int first_chunk, int last_
         }
 
         // Input only for first chunk
-        if (i == first_chunk) {
+        //if (i == first_chunk) {
             mChunks[i].mIfMap.mDataPtr = new int[mChunks[i].mIfMap.mLenght];
             mChunks[i].mIfMap.mFillPtr = mChunks[i].mIfMap.mDataPtr;
             mChunks[i].mIfMap.mIsActive = true;
-        }
+        //}
     }
 }
 
@@ -193,6 +217,26 @@ int Chunk::address_in_range(int addr, int len)
     return len - (data_end - chunk_end);
 }
 
+bool Chunk::is_complete()
+{
+    if (mOfMap.mIsActive) {
+        if ((long)mOfMap.mDataPtr + (mOfMap.mLenght * 4) != (long)mOfMap.mFillPtr)
+            LOG_ERROR_RETURN_FALSE(utils::string_format("OfMap not complete in chunk %d", mChunkNumber));
+    }
+
+    if (mFilters.mIsActive) {
+        if ((long)mFilters.mDataPtr + (mFilters.mLenght * 4) != (long)mFilters.mFillPtr)
+            LOG_ERROR_RETURN_FALSE(utils::string_format("Filters not complete in chunk %d", mChunkNumber));        
+    }
+
+    if (mIfMap.mIsActive) {
+        if ((long)mIfMap.mDataPtr + (mIfMap.mLenght * 4) != (long)mIfMap.mFillPtr)
+            LOG_ERROR_RETURN_FALSE(utils::string_format("IfMap not complete in chunk %d", mChunkNumber));       
+    }
+
+    return true;
+}
+
 int Chunk::read_map(int* data_ptr, int glob_addr, int len, ChunkMap& map)
 {
     int chunk_end = map.mStartAddr + map.mLenght;
@@ -204,5 +248,6 @@ int Chunk::read_map(int* data_ptr, int glob_addr, int len, ChunkMap& map)
 
     std::memcpy(map.mFillPtr, data_ptr, read_len);
     map.mFillPtr += read_len;
+
     return read_len;
 }

@@ -136,7 +136,7 @@ vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_
  	return output;
 }
 
-static inline float FastExpSse(float f)
+/*static inline float FastExpSse(float f)
 {
     float e;
     __m128 x = _mm_set1_ps(f);
@@ -149,7 +149,7 @@ static inline float FastExpSse(float f)
     __m128i tmp = _mm_add_epi32(_mm_cvtps_epi32(_mm_mul_ps(a, x)), b);
     _mm_store_ps(&e, _mm_and_ps(_mm_castsi128_ps(tmp), mask));
     return e;
-}
+}*/
 
 inline double exp1(double x) {
     x = 1.0 + x / 256.0;
