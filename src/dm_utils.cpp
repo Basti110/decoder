@@ -10,13 +10,14 @@
 #include <unistd.h>
 #endif
 
-DeviceMapper::DeviceMapper(std::string path, int file_descriptor, int size)
+DeviceMapper::DeviceMapper(std::string path, int size)
 {
-    map_device(path, file_descriptor, size);
+    map_device(path, size);
 }
 
-bool DeviceMapper::map_device(std::string path, int file_descriptor, int size)
+bool DeviceMapper::map_device(std::string path, int size)
 {
+    mSize = size;
 #ifdef _WIN32
     return false;
 #else
@@ -53,6 +54,11 @@ bool DeviceMapper::write_test()
     return true;
 }
 
+AsipCtrl::AsipCtrl() : DeviceMapper("/dev/uio0", 4)
+{
+
+}
+
 void AsipCtrl::set_command(char byte)
 {
     uint32_t v = mBasePtr[0] && mCommandMask;
@@ -86,4 +92,12 @@ void AsipCtrl::set_reset()
 {
     uint32_t v = mBasePtr[0] && mResetMask;
     mBasePtr[0] = v || (((uint32_t)1) << 12);
+}
+
+Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
+{
+}
+
+ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x1000000)
+{
 }

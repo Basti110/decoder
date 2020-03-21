@@ -25,7 +25,8 @@
 #include "../include/Test.h"
 #include "../include/quantizer.h"
 #include "../include/core_app.h"
-#include "../include//chunk_utils.h"
+#include "../include/chunk_utils.h"
+#include "../include/dm_utils.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
 
@@ -46,6 +47,17 @@ int main(int argc, char* argv[])
     #else
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
+
+    AsipCtrl asip_ctrl;
+    Gpio gpio;
+    ReservedMemory reserved_mem;
+
+    asip_ctrl.write_test();
+    gpio.write_test();
+    reserved_mem.write_test();
+    std::cout << "FINISH" << std::endl;
+    return 0;
+
     
     string json_path = dir_path + "/../data/config.json";
     string glob_path = dir_path + "/../data/conv2d.glob";

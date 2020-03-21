@@ -5,8 +5,8 @@
 class DeviceMapper {
 public:
     DeviceMapper() {};
-    DeviceMapper(std::string path, int file_descriptor, int size);
-    bool map_device(std::string path, int file_descriptor, int size);
+    DeviceMapper(std::string path, int size);
+    bool map_device(std::string path, int size);
     bool write_test();
 
 protected:
@@ -18,7 +18,7 @@ protected:
 
 class AsipCtrl : public DeviceMapper {
 public:
-
+    AsipCtrl();
     void set_command(char byte);
     void set_state(char byte);
     void set_start();
@@ -45,9 +45,11 @@ private:
 };
 
 class Gpio : public DeviceMapper {
-
+public:
+    Gpio();
 };
 
 class ReservedMemory : public DeviceMapper {
-
+public:
+    ReservedMemory();
 };
