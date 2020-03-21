@@ -3,11 +3,14 @@
 #include <chrono>
 
 #ifndef _WIN32
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <time.h>
 #include <unistd.h>
 #include <poll.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
 #endif
 
 DeviceMapper::DeviceMapper(std::string path, int size)
@@ -24,14 +27,14 @@ bool DeviceMapper::map_device(std::string path, int size)
     mFileDescriptor = open(mDevicePath.data(), O_RDWR);
     LOG_ERROR_IF_RETURN_FALSE(mFileDescriptor < 0, "Could not open Device");
     mBasePtr = (uint32_t*)mmap(0, mSize, PROT_READ | PROT_WRITE, MAP_SHARED, mFileDescriptor, 0);
-    LOG_ERROR_IF_RETURN_FALSE((int)mBasePtr <= 0, "Could map Device");
+    LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "Could map Device");
     return true;
 #endif
 }
 
 bool DeviceMapper::write_test()
 {
-    LOG_ERROR_IF_RETURN_FALSE((int)mBasePtr <= 0, "No mapped memory");
+    LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "No mapped memory");
     
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
