@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-std=c++17 -O3
-
+#test
 # Dependencies
 DEPSH = decoder.h Test.h utils.h core_app.h quantizer.h chunk_utils.h
 OBJ = main.o decoder.o Test.o core_app.o quantizer.o chunk_utils.o
