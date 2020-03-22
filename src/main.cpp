@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     AsipCtrl asip_ctrl;
     Gpio gpio;
     ReservedMemory reserved_mem;
-
+    asip_ctrl.test();
     asip_ctrl.write_test();
     gpio.write_test();
     reserved_mem.write_test();

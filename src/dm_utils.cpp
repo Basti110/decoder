@@ -67,22 +67,25 @@ AsipCtrl::AsipCtrl() : DeviceMapper("/dev/uio0", 4)
 
 }
 
-void AsipCtrl::set_command(char byte)
+void AsipCtrl::set_command(uint8_t byte)
 {
-    uint32_t v = mBasePtr[0] && mCommandMask;
-    mBasePtr[0] = v || (uint32_t)byte;
+    uint32_t v = mBasePtr[0];
+    v = v & mCommandMask;
+    v = v | (uint32_t)byte;
+    mBasePtr[0] = v;
 }
 
-void AsipCtrl::set_state(char byte)
+void AsipCtrl::set_state(uint8_t byte)
 {
-    uint32_t v = mBasePtr[0] && mStateMask;
-    mBasePtr[0] = v || (((uint32_t)byte) << 8);
+    uint32_t v = mBasePtr[0] & mStateMask;
+    v = v | (((uint32_t)byte) << 8);
+    mBasePtr[0] = v;
 }
 
 void AsipCtrl::set_start()
 {
-    uint32_t v = mBasePtr[0] && mStartMask;
-    mBasePtr[0] = v || (((uint32_t)1) << 9);
+    uint32_t v = mBasePtr[0] & mStartMask;
+    mBasePtr[0] = v ^ (((uint32_t)1) << 16);
 }
 
 bool AsipCtrl::read_finish()
@@ -92,14 +95,14 @@ bool AsipCtrl::read_finish()
 
 void AsipCtrl::set_wait()
 {
-    uint32_t v = mBasePtr[0] && mWaitMask;
-    mBasePtr[0] = v || (((uint32_t)1) << 11);
+    uint32_t v = mBasePtr[0] & mWaitMask;
+    mBasePtr[0] = v ^ (((uint32_t)1) << 18);
 }
 
 void AsipCtrl::set_reset()
 {
-    uint32_t v = mBasePtr[0] && mResetMask;
-    mBasePtr[0] = v || (((uint32_t)1) << 12);
+    uint32_t v = mBasePtr[0] & mResetMask;
+    mBasePtr[0] = v ^ (((uint32_t)1) << 19);
 }
 
 uint32_t AsipCtrl::read_register1()
@@ -109,22 +112,24 @@ uint32_t AsipCtrl::read_register1()
 
 void AsipCtrl::test()
 {
-    uint8_t command = 0x12;
+    uint8_t command_t = 0x12;
     uint8_t state = 0x34;
-
-    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
-    set_command((char)command);
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    set_command(command_t);
     std::cout << "--- set command ---" << std::endl;
-    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
-    set_state((char)state);
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    set_state(state);
     std::cout << "--- set state -----" << std::endl;
-    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_start();
     std::cout << "--- set start -----" << std::endl;
-    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_wait();
     std::cout << "--- set wait  -----" << std::endl;
-    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;   
+    set_reset();
+    std::cout << "--- set reset  -----" << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
 }
 
 Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
