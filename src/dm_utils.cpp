@@ -97,8 +97,34 @@ void AsipCtrl::set_reset()
     mBasePtr[0] = v || (((uint32_t)1) << 12);
 }
 
+uint32_t AsipCtrl::read_register1()
+{
+    return mBasePtr[0];
+}
+
+void AsipCtrl::test()
+{
+    uint8_t command = 0x12;
+    uint8_t state = 0x34;
+
+    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    set_command((char)command);
+    std::cout << "--- set command ---" << std::endl;
+    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    set_state((char)state);
+    std::cout << "--- set state -----" << std::endl;
+    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    set_start();
+    std::cout << "--- set start -----" << std::endl;
+    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+    set_wait();
+    std::cout << "--- set wait  -----" << std::endl;
+    std::cout << "Register 1:" << std::hex << read_register1() << std::endl;
+}
+
 Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
 {
+
 }
 
 ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x1000000)
