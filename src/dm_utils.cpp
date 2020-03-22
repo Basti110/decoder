@@ -20,11 +20,13 @@ DeviceMapper::DeviceMapper(std::string path, int size)
 
 bool DeviceMapper::map_device(std::string path, int size)
 {
+    mDevicePath = path;
     mSize = size;
 #ifdef _WIN32
     return false;
 #else
-    mFileDescriptor = open(mDevicePath.data(), O_RDWR);
+    std::cout << "try to open \"" << mDevicePath <<"\"" << std::endl;
+    mFileDescriptor = open(mDevicePath.c_str(), O_RDWR);
     LOG_ERROR_IF_RETURN_FALSE(mFileDescriptor < 0, "Could not open Device");
     mBasePtr = (uint32_t*)mmap(0, mSize, PROT_READ | PROT_WRITE, MAP_SHARED, mFileDescriptor, 0);
     LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "Could map Device");
@@ -37,23 +39,26 @@ bool DeviceMapper::write_test()
     LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "No mapped memory");
     
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-    for (int i = 0; i < mSize; ++i) {
+    int size = (int) mSize / 4;
+    for (int i = 0; i < size; ++i) {
+        // std::cout << std::hex << i << std::endl;
         mBasePtr[i] = i;
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Time Write data on device: " << mDevicePath << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+    std::cout << "Time write data on device: " << mDevicePath << " in ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     
     begin = std::chrono::steady_clock::now();
 
-    for (int i = 0; i < mSize; ++i) {
+    for (int i = 0; i < size; ++i) {
         if (mBasePtr[i] != i)
-            LOG_ERROR_RETURN_FALSE(utils::string_format("Write Test %s on addr %i", mDevicePath, i));
+            LOG_ERROR_RETURN_FALSE(utils::string_format("Write Test %s on addr %d", mDevicePath.c_str(), i));
     }
     
     end = std::chrono::steady_clock::now();
-    std::cout << "Time Write data on device: " << mDevicePath << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+    std::cout << "Time read data of device: " << mDevicePath << " in ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     return true;
 }
 
@@ -101,6 +106,6 @@ Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
 {
 }
 
-ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x1000000)
+ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x40000000)
 {
 }
