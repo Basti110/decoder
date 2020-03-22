@@ -25,6 +25,9 @@ public:
     bool read_finish();
     void set_wait();
     void set_reset();
+    uint32_t read_register1();
+    void test();
+    
     void set_param1(uint32_t value);
     void set_param2(uint32_t value);
     void set_param3(uint32_t value);
