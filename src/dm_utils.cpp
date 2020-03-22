@@ -93,6 +93,21 @@ bool AsipCtrl::read_finish()
     return false;
 }
 
+void AsipCtrl::clear_start() {
+    uint32_t v = mBasePtr[0] & mStartMask;
+    mBasePtr[0] = (((uint32_t)1) << 16);
+}
+
+void AsipCtrl::clear_wait() {
+    uint32_t v = mBasePtr[0] & mWaitMask;
+    mBasePtr[0] = (((uint32_t)1) << 18);
+}
+
+void AsipCtrl::clear_reset() {
+    uint32_t v = mBasePtr[0] & mResetMask;
+    mBasePtr[0] = (((uint32_t)1) << 19);
+}
+
 void AsipCtrl::set_wait()
 {
     uint32_t v = mBasePtr[0] & mWaitMask;
@@ -116,6 +131,9 @@ void AsipCtrl::test()
     uint8_t state = 0x34;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_command(command_t);
+    clear_start();
+    clear_wait();
+    clear_reset();
     std::cout << "--- set command ---" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_state(state);

@@ -25,6 +25,9 @@ public:
     bool read_finish();
     void set_wait();
     void set_reset();
+    void clear_start();
+    void clear_wait();
+    void clear_reset();
     uint32_t read_register1();
     void test();
     
