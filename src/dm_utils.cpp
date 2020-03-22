@@ -94,18 +94,18 @@ bool AsipCtrl::read_finish()
 }
 
 void AsipCtrl::clear_start() {
-    uint32_t v = mBasePtr[0] & mStartMask;
-    mBasePtr[0] = (((uint32_t)1) << 16);
+    uint32_t v = mBasePtr[0] & mStartMask; 
+    mBasePtr[0] = v; //(((uint32_t)1) << 16);
 }
 
 void AsipCtrl::clear_wait() {
     uint32_t v = mBasePtr[0] & mWaitMask;
-    mBasePtr[0] = (((uint32_t)1) << 18);
+    mBasePtr[0] = v; // (((uint32_t)1) << 18);
 }
 
 void AsipCtrl::clear_reset() {
     uint32_t v = mBasePtr[0] & mResetMask;
-    mBasePtr[0] = (((uint32_t)1) << 19);
+    mBasePtr[0] = v; //(((uint32_t)1) << 19);
 }
 
 void AsipCtrl::set_wait()
@@ -127,13 +127,11 @@ uint32_t AsipCtrl::read_register1()
 
 void AsipCtrl::test()
 {
-    uint8_t command_t = 0x12;
-    uint8_t state = 0x34;
+    uint8_t command = 0x34;
+    uint8_t state = 0x12;
+    mBasePtr[0] = mBasePtr[0] & 0xF0000;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
-    set_command(command_t);
-    clear_start();
-    clear_wait();
-    clear_reset();
+    set_command(command);
     std::cout << "--- set command ---" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_state(state);
@@ -147,7 +145,16 @@ void AsipCtrl::test()
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;   
     set_reset();
     std::cout << "--- set reset  -----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;    
+    clear_start();
+    std::cout << "--- clear start -----" << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+    clear_wait();
+    std::cout << "--- clear  wait -----" << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+    clear_reset();
+    std::cout << "--- clear reset-----" << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
 }
 
 Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
