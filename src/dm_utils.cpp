@@ -88,9 +88,38 @@ void AsipCtrl::set_start()
     mBasePtr[0] = v ^ (((uint32_t)1) << 16);
 }
 
+void AsipCtrl::set_finish()
+{
+    uint32_t v = mBasePtr[0] & mFinishMask;
+    mBasePtr[0] = v ^ (((uint32_t)1) << 17);
+}
+
 bool AsipCtrl::read_finish()
 {
+#ifdef _WIN32
     return false;
+#else
+    uint32_t int_info;
+    int read_size;
+    read_size = read(mFileDescriptor, &int_info, sizeof(int_info));
+    LOG_ERROR_IF_RETURN_FALSE(read_size < 0, "Can not read Interupt");
+    std::cout << "GOT " << int_info << " interupts" << std::endl;
+    return false;
+#endif
+}
+
+bool AsipCtrl::write_finish()
+{
+#ifdef _WIN32
+    return false;
+#else
+    uint32_t int_info = 1;
+    int read_size;
+    read_size = write(mFileDescriptor, &int_info, sizeof(int_info));
+    LOG_ERROR_IF_RETURN_FALSE(read_size < 0, "Can not write Interupt");
+    std::cout << "Wrote " << int_info << " in interupt" << std::endl;
+    return false;
+#endif
 }
 
 void AsipCtrl::clear_start() {
@@ -105,6 +134,12 @@ void AsipCtrl::clear_wait() {
 
 void AsipCtrl::clear_reset() {
     uint32_t v = mBasePtr[0] & mResetMask;
+    mBasePtr[0] = v; //(((uint32_t)1) << 19);
+}
+
+void AsipCtrl::clear_finish()
+{
+    uint32_t v = mBasePtr[0] & mFinishMask;
     mBasePtr[0] = v; //(((uint32_t)1) << 19);
 }
 
@@ -127,11 +162,16 @@ uint32_t AsipCtrl::read_register1()
 
 void AsipCtrl::test()
 {
+    std::cout << "Write Finish" << std::endl;
+    set_finish();
+    std::cout << "Read Finish" << std::endl;
+    read_finish();
+
     uint8_t command = 0x34;
     uint8_t state = 0x12;
-    mBasePtr[0] = mBasePtr[0] & 0xF0000;
+    //mBasePtr[0] = mBasePtr[0] & 0xF0000;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
-    set_command(command);
+    /*set_command(command);
     std::cout << "--- set command ---" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_state(state);
@@ -140,21 +180,40 @@ void AsipCtrl::test()
     set_start();
     std::cout << "--- set start -----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    set_finish();
+    std::cout << "--- set finish ----" << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     set_wait();
     std::cout << "--- set wait  -----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;   
     set_reset();
     std::cout << "--- set reset  -----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;    
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;*/   
     clear_start();
     std::cout << "--- clear start -----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+    clear_finish();
+    std::cout << "--- clear finish-----" << std::endl;
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
     clear_wait();
     std::cout << "--- clear  wait -----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
     clear_reset();
     std::cout << "--- clear reset-----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+
+}
+
+void AsipCtrl::set_param1(uint32_t value)
+{
+}
+
+void AsipCtrl::set_param2(uint32_t value)
+{
+}
+
+void AsipCtrl::set_param3(uint32_t value)
+{
 }
 
 Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)

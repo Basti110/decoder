@@ -22,12 +22,15 @@ public:
     void set_command(uint8_t byte);
     void set_state(uint8_t byte);
     void set_start();
-    bool read_finish();
+    void set_finish();
     void set_wait();
     void set_reset();
     void clear_start();
     void clear_wait();
     void clear_reset();
+    void clear_finish();
+    bool read_finish();
+    bool write_finish();
     uint32_t read_register1();
     void test();
     
