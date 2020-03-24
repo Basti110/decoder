@@ -94,7 +94,7 @@ void AsipCtrl::set_finish()
     mBasePtr[0] = v ^ (((uint32_t)1) << 17);
 }
 
-bool AsipCtrl::read_finish()
+bool AsipCtrl::read_interrupt()
 {
 #ifdef _WIN32
     return false;
@@ -104,11 +104,11 @@ bool AsipCtrl::read_finish()
     read_size = read(mFileDescriptor, &int_info, sizeof(int_info));
     LOG_ERROR_IF_RETURN_FALSE(read_size < 0, "Can not read Interupt");
     std::cout << "GOT " << int_info << " interupts" << std::endl;
-    return false;
+    return true;
 #endif
 }
 
-bool AsipCtrl::write_finish()
+bool AsipCtrl::ack_interrupt()
 {
 #ifdef _WIN32
     return false;
@@ -118,7 +118,7 @@ bool AsipCtrl::write_finish()
     read_size = write(mFileDescriptor, &int_info, sizeof(int_info));
     LOG_ERROR_IF_RETURN_FALSE(read_size < 0, "Can not write Interupt");
     std::cout << "Wrote " << int_info << " in interupt" << std::endl;
-    return false;
+    return true;
 #endif
 }
 
@@ -168,9 +168,9 @@ uint32_t AsipCtrl::read_gpio()
 void AsipCtrl::test()
 {
     std::cout << "Write Finish" << std::endl;
-    set_finish();
+    ack_interrupt();
     std::cout << "Read Finish" << std::endl;
-    read_finish();
+    read_interrupt();
 
     uint8_t command = 0x34;
     uint8_t state = 0x12;

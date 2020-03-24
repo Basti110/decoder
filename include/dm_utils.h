@@ -35,8 +35,8 @@ public:
     void clear_wait();
     void clear_reset();
     void clear_finish();
-    bool read_finish();
-    bool write_finish();
+    bool read_interrupt();
+    bool ack_interrupt();
     uint32_t read_register1();
     uint32_t read_gpio();
     void test();
