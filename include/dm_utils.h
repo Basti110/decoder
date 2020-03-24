@@ -16,6 +16,12 @@ protected:
     uint32_t* mBasePtr = nullptr;
 };
 
+class Gpio : public DeviceMapper {
+public:
+    Gpio();
+    uint32_t get_input();
+};
+
 class AsipCtrl : public DeviceMapper {
 public:
     AsipCtrl();
@@ -32,6 +38,7 @@ public:
     bool read_finish();
     bool write_finish();
     uint32_t read_register1();
+    uint32_t read_gpio();
     void test();
     
     void set_param1(uint32_t value);
@@ -45,17 +52,13 @@ private:
     const uint32_t mFinishMask = 0x0002FFFF;
     const uint32_t mWaitMask = 0x0004FFFF;
     const uint32_t mResetMask = 0x0008FFFF;
+    Gpio mGpio;
     /*const uint32_t mCommandMask = 0x000000FF;
     const uint32_t mStateMask = 0x0000FF00;
     const uint32_t mStartMask = 0x00010000;
     const uint32_t mFinishMask = 0x00020000;
     const uint32_t mWaitMask = 0x00040000;
     const uint32_t mResetMask = 0x00080000;*/
-};
-
-class Gpio : public DeviceMapper {
-public:
-    Gpio();
 };
 
 class ReservedMemory : public DeviceMapper {

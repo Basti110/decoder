@@ -160,6 +160,11 @@ uint32_t AsipCtrl::read_register1()
     return mBasePtr[0];
 }
 
+uint32_t AsipCtrl::read_gpio()
+{
+    return mGpio.get_input();
+}
+
 void AsipCtrl::test()
 {
     std::cout << "Write Finish" << std::endl;
@@ -169,38 +174,48 @@ void AsipCtrl::test()
 
     uint8_t command = 0x34;
     uint8_t state = 0x12;
-    //mBasePtr[0] = mBasePtr[0] & 0xF0000;
+    mBasePtr[0] = mBasePtr[0] & 0xF0000;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
-    /*set_command(command);
+    set_command(command);
     std::cout << "--- set command ---" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     set_state(state);
     std::cout << "--- set state -----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     set_start();
     std::cout << "--- set start -----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     set_finish();
     std::cout << "--- set finish ----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     set_wait();
     std::cout << "--- set wait  -----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;   
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     set_reset();
     std::cout << "--- set reset  -----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;*/   
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     clear_start();
     std::cout << "--- clear start -----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     clear_finish();
     std::cout << "--- clear finish-----" << std::endl;
     std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     clear_wait();
     std::cout << "--- clear  wait -----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
     clear_reset();
     std::cout << "--- clear reset-----" << std::endl;
-    std::cout << "Register 1: " << std::hex << read_register1() << std::endl; 
+    std::cout << "Register 1: " << std::hex << read_register1() << std::endl;
+    std::cout << "    GPIO 1: " << std::hex << read_gpio() << std::endl;
 
 }
 
@@ -218,7 +233,12 @@ void AsipCtrl::set_param3(uint32_t value)
 
 Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
 {
+    mBasePtr[1] = 0xffffffff;
+}
 
+uint32_t Gpio::get_input()
+{
+    return mBasePtr[0];
 }
 
 ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x40000000)
