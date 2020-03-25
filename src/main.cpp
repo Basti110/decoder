@@ -49,11 +49,11 @@ int main(int argc, char* argv[])
     #endif
 
     AsipCtrl asip_ctrl;
-    Gpio gpio;
+    //Gpio gpio;
     ReservedMemory reserved_mem;
     asip_ctrl.test();
-    asip_ctrl.write_test();
-    gpio.write_test();
+    //asip_ctrl.write_test();
+    //gpio.write_test();
     reserved_mem.write_test();
     std::cout << "FINISH" << std::endl;
     return 0;

@@ -29,7 +29,7 @@ bool DeviceMapper::map_device(std::string path, int size)
     mFileDescriptor = open(mDevicePath.c_str(), O_RDWR);
     LOG_ERROR_IF_RETURN_FALSE(mFileDescriptor < 0, "Could not open Device");
     mBasePtr = (uint32_t*)mmap(0, mSize, PROT_READ | PROT_WRITE, MAP_SHARED, mFileDescriptor, 0);
-    LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "Could map Device");
+    LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "Could not map Device");
     return true;
 #endif
 }
@@ -62,7 +62,7 @@ bool DeviceMapper::write_test()
     return true;
 }
 
-AsipCtrl::AsipCtrl() : DeviceMapper("/dev/uio0", 4)
+AsipCtrl::AsipCtrl() : DeviceMapper("/dev/uio0", 16)
 {
 
 }
@@ -167,10 +167,10 @@ uint32_t AsipCtrl::read_gpio()
 
 void AsipCtrl::test()
 {
-    std::cout << "Write Finish" << std::endl;
+    /*std::cout << "Write Finish" << std::endl;
     ack_interrupt();
     std::cout << "Read Finish" << std::endl;
-    read_interrupt();
+    read_interrupt();*/
 
     uint8_t command = 0x34;
     uint8_t state = 0x12;
@@ -231,9 +231,12 @@ void AsipCtrl::set_param3(uint32_t value)
 {
 }
 
-Gpio::Gpio() : DeviceMapper("/dev/uio1", 2)
+Gpio::Gpio() : DeviceMapper("/dev/uio1", 64)
 {
-    mBasePtr[1] = 0xffffffff;
+    mBasePtr[0] = 0xfff0ffff;
+    mBasePtr[1] = 0xfff0ffff;
+    std::cout << "gpio 0: " << mBasePtr[0] << std::endl;
+    std::cout << "gpio 1: " << mBasePtr[1] << std::endl;
 }
 
 uint32_t Gpio::get_input()
