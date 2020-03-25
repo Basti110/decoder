@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
 
-    AsipCtrl asip_ctrl;
+    /*AsipCtrl asip_ctrl;
     Gpio gpio;
     ReservedMemory reserved_mem;
     asip_ctrl.test();
@@ -56,11 +56,11 @@ int main(int argc, char* argv[])
     gpio.write_test();
     reserved_mem.write_test();
     std::cout << "FINISH" << std::endl;
-    return 0;
+    return 0;*/
 
     
     string json_path = dir_path + "/../data/config.json";
-    string glob_path = dir_path + "/../data/conv2d.glob";
+    string glob_path = dir_path + "/../data/configs/conv2d.glob";
     string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
@@ -69,18 +69,25 @@ int main(int argc, char* argv[])
     int port = 8485;
     string ip = "127.0.0.1";
     bool network = false;
-    /* ----- Test Glob Select --------- 
+    /* ----- Test Glob Select --------- */
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
-    chunk_container.read_data_from_glob(glob_path);
+    chunk_container.read_data_from_glob(glob_path, false);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     bool is_complete = chunk_container.is_complete();
     if(is_complete)
         std::cout << "True";
+
+    int size = chunk_container.get_chunk(0).get_ofmap_len();
+    int* if_map = chunk_container.get_chunk(2).get_ifmap_ptr();
+    bool map_is_equal = chunk_container.check_ofmap(if_map, 1, 4);
+    if (map_is_equal)
+        std::cout << "True";
+    return 0;
     //test();
-    //img_to_data(image_path, out_path, template_path); */
+    //img_to_data(image_path, out_path, template_path);
    
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();

@@ -30,6 +30,13 @@ public:
     int address_in_range(int addr, int len);
     bool is_complete();
 
+    int* get_ofmap_ptr();
+    int* get_ifmap_ptr();
+    int* get_filter_ptr();
+    int get_ofmap_len();
+    int get_ifmap_len();
+    int get_filter_len();
+    
     friend class ChunkContainer;
 
 private:
@@ -52,6 +59,7 @@ class ChunkContainer
         bool write_data_on_addr(int addr);
         bool check_ofmap(int* ofmap, int chunk, int eps, int len = -1);
         bool is_complete();
+        Chunk& get_chunk(int chunk);
 
     private:
         bool read_data_from_mem(int* ptr, int glob_addr, int len);
