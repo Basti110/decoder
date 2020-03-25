@@ -29,7 +29,15 @@ public:
     //Return -1 if der is no data in range(addr, len) for this chunk
     int address_in_range(int addr, int len);
     bool is_complete();
+    void write_to_memory(uint16_t* addr);
 
+    int* get_ofmap_ptr();
+    int* get_ifmap_ptr();
+    int* get_filter_ptr();
+    int get_ofmap_len();
+    int get_ifmap_len();
+    int get_filter_len();
+    
     friend class ChunkContainer;
 
 private:
@@ -49,9 +57,10 @@ class ChunkContainer
     public:
         bool init_chunk(std::string path_json, int vsize = 4);
         bool read_data_from_glob(std::string path_glob, bool use_ofmap = false, int first_chunk = 0, int last_chunk = 36);
-        bool write_data_on_addr(int addr);
+        void write_data_on_addr(uint16_t* addr);
         bool check_ofmap(int* ofmap, int chunk, int eps, int len = -1);
         bool is_complete();
+        Chunk& get_chunk(int chunk);
 
     private:
         bool read_data_from_mem(int* ptr, int glob_addr, int len);

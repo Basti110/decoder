@@ -63,5 +63,6 @@ private:
 
 class ReservedMemory : public DeviceMapper {
 public:
+    uint16_t* get_addr();
     ReservedMemory();
 };
