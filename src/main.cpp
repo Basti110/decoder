@@ -48,10 +48,10 @@ int main(int argc, char* argv[])
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
 
-    /*AsipCtrl asip_ctrl;
+    AsipCtrl asip_ctrl;
     Gpio gpio;
     ReservedMemory reserved_mem;
-    asip_ctrl.test();
+    /*asip_ctrl.test();
     asip_ctrl.write_test();
     gpio.write_test();
     reserved_mem.write_test();
@@ -69,23 +69,23 @@ int main(int argc, char* argv[])
     int port = 8485;
     string ip = "127.0.0.1";
     bool network = false;
+    
     /* ----- Test Glob Select --------- */
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
-    chunk_container.read_data_from_glob(glob_path, false);
+    chunk_container.read_data_from_glob(glob_path, true, 0, 36);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+    std::cout << "Read Glob" << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     bool is_complete = chunk_container.is_complete();
-    if(is_complete)
-        std::cout << "True";
 
-    int size = chunk_container.get_chunk(0).get_ofmap_len();
-    int* if_map = chunk_container.get_chunk(2).get_ifmap_ptr();
-    bool map_is_equal = chunk_container.check_ofmap(if_map, 1, 4);
-    if (map_is_equal)
-        std::cout << "True";
-    return 0;
+    if(is_complete)
+        std::cout << "Glob Complete: True" << std::endl;
+    else
+        std::cout << "Glob Complete: False" << std::endl;
+
+    chunk_container.write_data_on_addr(reserved_mem.get_addr());
+
     //test();
     //img_to_data(image_path, out_path, template_path);
    

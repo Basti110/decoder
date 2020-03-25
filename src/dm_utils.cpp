@@ -241,6 +241,11 @@ uint32_t Gpio::get_input()
     return mBasePtr[0];
 }
 
+uint16_t* ReservedMemory::get_addr()
+{
+    return (uint16_t*)mBasePtr;
+}
+
 ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x40000000)
 {
 }
