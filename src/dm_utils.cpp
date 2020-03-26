@@ -251,4 +251,7 @@ uint16_t* ReservedMemory::get_addr()
 
 ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x40000000)
 {
+    for(int i = 0; i < 78; ++i) {
+        std::cout << "mem: " << ((uint16_t*)mBasePtr)[i] << std::endl;
+    }
 }

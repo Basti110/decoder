@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c++17 -O3
+CFLAGS=-std=c++17 -O0
 
 # Dependencies
 DEPSH = decoder.h Test.h utils.h core_app.h quantizer.h chunk_utils.h dm_utils.h

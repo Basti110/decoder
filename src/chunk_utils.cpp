@@ -266,7 +266,9 @@ void Chunk::write_to_memory(uint16_t* addr)
     if(mOfMap.mIsActive) {
         for(int i = 0; i < mOfMap.mLenght; ++i) {
             //std::cout << i << std::endl;
-            (addr + mOfMap.mStartAddr)[i] = ((uint16_t*)(mOfMap.mDataPtr))[i];
+            (addr + mOfMap.mStartAddr)[i] = (uint16_t)(mOfMap.mDataPtr[i]);
+            if(mOfMap.mStartAddr == 0 && i < 78)
+                std::cout << (addr + mOfMap.mStartAddr)[i] << std::endl; 
         }
     }
 
@@ -274,7 +276,7 @@ void Chunk::write_to_memory(uint16_t* addr)
     if(mFilters.mIsActive) {
         for(int i = 0; i < mFilters.mLenght; ++i) {
             //std::cout << i << std::endl;
-            (addr + mFilters.mStartAddr)[i] = ((uint16_t*)(mFilters.mDataPtr))[i];
+            (addr + mFilters.mStartAddr)[i] = (uint16_t)(mFilters.mDataPtr[i]);
         }
     }
 
@@ -282,7 +284,7 @@ void Chunk::write_to_memory(uint16_t* addr)
     if(mIfMap.mIsActive) {
         for(int i = 0; i < mIfMap.mLenght; ++i) {
             //std::cout << i << std::endl;
-            (addr + mIfMap.mStartAddr)[i] = ((uint16_t*)(mIfMap.mDataPtr))[i];
+            (addr + mIfMap.mStartAddr)[i] = (uint16_t)(mIfMap.mDataPtr[i]);
         }
     }
     /*if(false)

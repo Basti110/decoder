@@ -48,17 +48,17 @@ int main(int argc, char* argv[])
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
 
-    //AsipCtrl asip_ctrl;
+    AsipCtrl asip_ctrl;
     //Gpio gpio;
-    //ReservedMemory reserved_mem;
+    ReservedMemory reserved_mem;
     //reserved_mem.write_test();
     //asip_ctrl.test();
     //asip_ctrl.write_test();
     //gpio.write_test();
     
     string json_path = dir_path + "/../data/config.json";
-    //string glob_path = "/shared_local/conv2d.glob";
-    string glob_path = dir_path + "/../data/configs/conv2d.glob";
+    string glob_path = "/shared_local/conv2d.glob";
+    //string glob_path = dir_path + "/../data/configs/conv2d.glob";
     string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     else
         std::cout << "Glob Complete: False" << std::endl;
 
-    //chunk_container.write_data_on_addr(reserved_mem.get_addr());
+    chunk_container.write_data_on_addr(reserved_mem.get_addr());
 
     //test();
     //img_to_data(image_path, out_path, template_path);
