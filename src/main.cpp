@@ -51,17 +51,13 @@ int main(int argc, char* argv[])
     AsipCtrl asip_ctrl;
     //Gpio gpio;
     ReservedMemory reserved_mem;
-<<<<<<< HEAD
-    asip_ctrl.test();
+    //reserved_mem.write_test();
+    //asip_ctrl.test();
     //asip_ctrl.write_test();
     //gpio.write_test();
-    reserved_mem.write_test();
-    std::cout << "FINISH" << std::endl;
-    return 0;*/
-
     
     string json_path = dir_path + "/../data/config.json";
-    string glob_path = dir_path + "/../data/configs/conv2d.glob";
+    string glob_path = "/shared_local/conv2d.glob";
     string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";

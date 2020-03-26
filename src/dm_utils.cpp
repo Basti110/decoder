@@ -39,10 +39,10 @@ bool DeviceMapper::write_test()
     LOG_ERROR_IF_RETURN_FALSE((long)mBasePtr <= 0, "No mapped memory");
     
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    int size = (int) mSize / 4;
+    int size = (int) mSize / 2;
     for (int i = 0; i < size; ++i) {
         // std::cout << std::hex << i << std::endl;
-        mBasePtr[i] = i;
+       ((uint16_t*)mBasePtr)[i] = 0xab;
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -52,7 +52,7 @@ bool DeviceMapper::write_test()
     begin = std::chrono::steady_clock::now();
 
     for (int i = 0; i < size; ++i) {
-        if (mBasePtr[i] != i)
+        if (((uint16_t*)mBasePtr)[i] != 0xab)
             LOG_ERROR_RETURN_FALSE(utils::string_format("Write Test %s on addr %d", mDevicePath.c_str(), i));
     }
     
