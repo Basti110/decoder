@@ -142,13 +142,11 @@ Chunk& ChunkContainer::get_chunk(int chunk)
 
 bool ChunkContainer::read_data_from_mem(int* ptr, int glob_addr, int len)
 {
-    std::cout << "read map" << std::endl;
     int cur_addr = glob_addr;
     int cur_len = len;
 
     for (Chunk& chunk : mChunks) {
         int read_len = chunk.address_in_range(cur_addr, len);
-        std::cout << "t" << std::endl;
         if (read_len == -1)
             continue;
 
@@ -192,14 +190,13 @@ void Chunk::read(int* data_ptr, int glob_addr, int len)
     int data_end = glob_addr + len;
     int cur_addr = glob_addr;
     int cur_len = len;
-    std::cout << mChunkNumber << std::endl;
     // Not in Range
     if (chunk_end < data_start || data_end < chunk_start)
         return;
 
 
     // A Part is in OfMaps
-    if (cur_addr < mFilters.mStartAddr && cur_addr + cur_len >= mOfMap.mStartAddr) {
+    if (cur_addr < mOfMap.mStartAddr + mOfMap.mLenght && cur_addr + cur_len >= mOfMap.mStartAddr) {
         int r = read_map(data_ptr, cur_addr, cur_len, mOfMap);
         cur_addr += r;
         cur_len -= r;
