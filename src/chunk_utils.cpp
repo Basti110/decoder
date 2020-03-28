@@ -281,8 +281,8 @@ bool Chunk::is_complete()
 
 void Chunk::write_to_memory(uint16_t* addr)
 {
-    std::cout << "write on chunk : " << mChunkNumber <<  std::endl;
-    
+    std::cout << "write on chunk : " << mChunkNumber << std::endl;
+
     std::cout << "Adrr ConfStruct: " << mOfMap.mStartAddr << std::endl;
     if (mConfigStruct.mIsActive) {
         for (int i = 0; i < mConfigStruct.mLenght; ++i) {
@@ -291,25 +291,26 @@ void Chunk::write_to_memory(uint16_t* addr)
     }
 
     std::cout << "Adrr Ofmap: " << mOfMap.mStartAddr << std::endl;
-    if(mOfMap.mIsActive) {
-        for(int i = 0; i < mOfMap.mLenght; ++i) {
+    if (mOfMap.mIsActive) {
+        for (int i = 0; i < mOfMap.mLenght; ++i) {
             (addr + mOfMap.mStartAddr)[i] = (uint16_t)mOfMap.mDataPtr[i];
         }
     }
 
     std::cout << "Adrr Filters: " << mFilters.mStartAddr << std::endl;
-    if(mFilters.mIsActive) {
-        for(int i = 0; i < mFilters.mLenght; ++i) {
+    if (mFilters.mIsActive) {
+        for (int i = 0; i < mFilters.mLenght; ++i) {
             (addr + mFilters.mStartAddr)[i] = (uint16_t)mFilters.mDataPtr[i];
         }
     }
 
     std::cout << "Adrr Ifmap: " << mIfMap.mStartAddr << std::endl;
-    if(mIfMap.mIsActive) {
-        for(int i = 0; i < mIfMap.mLenght; ++i) {
+    if (mIfMap.mIsActive) {
+        for (int i = 0; i < mIfMap.mLenght; ++i) {
             (addr + mIfMap.mStartAddr)[i] = (uint16_t)mIfMap.mDataPtr[i];
         }
     }
+
     /*if(false)
         std::memcpy(addr + mOfMap.mStartAddr, mOfMap.mDataPtr, int(mOfMap.mLenght /
         sizeof(uint16_t)));
@@ -318,7 +319,7 @@ void Chunk::write_to_memory(uint16_t* addr)
     if (mFilters.mIsActive)
         std::memcpy(addr + mFilters.mStartAddr, mFilters.mDataPtr, int(mFilters.mLenght /
         sizeof(uint16_t)));
-    
+
     std::cout << " adrr ifmap: " << mIfMap.mStartAddr << std::endl;
     if (mIfMap.mIsActive)
         std::memcpy(addr + mIfMap.mStartAddr, mIfMap.mDataPtr, int(mIfMap.mLenght /

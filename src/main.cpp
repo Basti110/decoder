@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         string dir_path = file_path.substr(0, file_path.rfind("/"));
     #endif
 
-    //AsipCtrl asip_ctrl;
+    AsipCtrl asip_ctrl;
     //Gpio gpio;
     ReservedMemory reserved_mem;
     //reserved_mem.write_test();
@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
     //gpio.write_test();
     
     string json_path = dir_path + "/../data/config.json";
-    //string glob_path = "/shared_local/conv2d.glob";
-    string glob_path = dir_path + "/../data/configs/conv2d.glob";
+    string glob_path = "/shared_local/conv2d.glob";
+    //string glob_path = dir_path + "/../data/configs/conv2d.glob";
     string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
     else
         std::cout << "Glob Check Complete: False" << std::endl;
     // -------------------------
+
    
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();
@@ -91,9 +92,9 @@ int main(int argc, char* argv[])
         ("h, help", "Print help")
         ("t, test", "Start decoder test with example image and data")
         ("c, cam", "Test cam")
-        ("ps, print_struct", "Only print first config struct and return")
-        ("wg, write_glob", "Write glob to mem")
-        ("co, check_ofmap", "Check ofmap of first chunk")
+        ("ps", "Only print first config struct and return")
+        ("wg", "Write glob to mem")
+        ("co", "Check ofmap of first chunk")
         ("d, data", string("data input file for test data. Default: ").append(data_path), cxxopts::value<string>())
         ("v, verbose", "Verbose \"info()\" output")
         ("host", string("IP, stream over network"), cxxopts::value<string>())
