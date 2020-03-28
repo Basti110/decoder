@@ -68,20 +68,6 @@ int main(int argc, char* argv[])
     string ip = "127.0.0.1";
     bool network = false;
     
-    // ----- Load Glob ---------
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    ChunkContainer chunk_container;
-    chunk_container.init_chunk(json_path);
-    chunk_container.read_data_from_glob(glob_path, true, 0, 36);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
-    bool is_complete = chunk_container.is_complete();
-
-    if(is_complete)
-        std::cout << "Glob Check Complete: True" << std::endl;
-    else
-        std::cout << "Glob Check Complete: False" << std::endl;
-
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();
     options
@@ -108,6 +94,20 @@ int main(int argc, char* argv[])
             std::cout << "addr  " << i << ": " << ptr[i] << std::endl;
         return 0;
     }
+
+    // ----- Load Glob ---------
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    ChunkContainer chunk_container;
+    chunk_container.init_chunk(json_path);
+    chunk_container.read_data_from_glob(glob_path, true, 0, 36);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+    bool is_complete = chunk_container.is_complete();
+
+    if (is_complete)
+        std::cout << "Glob Check Complete: True" << std::endl;
+    else
+        std::cout << "Glob Check Complete: False" << std::endl;
 
     if (result.count("wg")) {
         chunk_container.write_data_on_addr(reserved_mem.get_addr());
