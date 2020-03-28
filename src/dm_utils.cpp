@@ -233,10 +233,10 @@ void AsipCtrl::set_param3(uint32_t value)
 
 Gpio::Gpio() : DeviceMapper("/dev/uio1", 64)
 {
-    mBasePtr[0] = 0xfff0ffff;
+    /*mBasePtr[0] = 0xfff0ffff;
     mBasePtr[1] = 0xfff0ffff;
     std::cout << "gpio 0: " << mBasePtr[0] << std::endl;
-    std::cout << "gpio 1: " << mBasePtr[1] << std::endl;
+    std::cout << "gpio 1: " << mBasePtr[1] << std::endl;*/
 }
 
 uint32_t Gpio::get_input()
@@ -251,7 +251,7 @@ uint16_t* ReservedMemory::get_addr()
 
 ReservedMemory::ReservedMemory() : DeviceMapper("/dev/uio2", 0x40000000)
 {
-    for(int i = 0; i < 78; ++i) {
+    /*for(int i = 0; i < 78; ++i) {
         std::cout << "mem: " << ((uint16_t*)mBasePtr)[i] << std::endl;
-    }
+    }*/
 }

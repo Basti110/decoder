@@ -68,26 +68,20 @@ int main(int argc, char* argv[])
     string ip = "127.0.0.1";
     bool network = false;
     
-    /* ----- Test Glob Select --------- */
+    // ----- Load Glob ---------
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
     chunk_container.read_data_from_glob(glob_path, true, 0, 36);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Read Glob" << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+    std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     bool is_complete = chunk_container.is_complete();
 
     if(is_complete)
-        std::cout << "Glob Complete: True" << std::endl;
+        std::cout << "Glob Check Complete: True" << std::endl;
     else
-        std::cout << "Glob Complete: False" << std::endl;
- 
-    chunk_container.write_data_on_addr(reserved_mem.get_addr());
-    chunk_container.check_ofmap(reserved_mem.get_addr(), 0, 10);
-    return 0;
-    //test();
-    //img_to_data(image_path, out_path, template_path);
-   
+        std::cout << "Glob Check Complete: False" << std::endl;
+
     cxxopts::Options options("decoder", "post processing ssd");
     options.positional_help("[optional args]").show_positional_help();
     options
@@ -96,6 +90,9 @@ int main(int argc, char* argv[])
         ("h, help", "Print help")
         ("t, test", "Start decoder test with example image and data")
         ("c, cam", "Test cam")
+        ("ps", "Only print first config struct and return")
+        ("wg", "Write glob to mem")
+        ("co", "Check ofmap of first chunk")
         ("d, data", string("data input file for test data. Default: ").append(data_path), cxxopts::value<string>())
         ("v, verbose", "Verbose \"info()\" output")
         ("host", string("IP, stream over network"), cxxopts::value<string>())
@@ -105,6 +102,27 @@ int main(int argc, char* argv[])
 
     auto result = options.parse(argc, argv);
 
+    if (result.count("ps")) {
+        uint16_t* ptr = reserved_mem.get_addr();
+        for (int i = 0; i < 78; i++)
+            std::cout << "addr  " << i << ": " << ptr[i] << std::endl;
+        return 0;
+    }
+
+    if (result.count("wg")) {
+        chunk_container.write_data_on_addr(reserved_mem.get_addr());
+        return 0;
+    }
+
+    if (result.count("co")) {
+        chunk_container.write_data_on_addr(reserved_mem.get_addr());
+        return 0;
+    }
+
+    if (result.count("v")) {
+        std::cout << "Verbose ON" << std::endl;
+        ::utils::verbose = true;
+    }
 
     if(result.count("host")) {
         std::cout << "network mode" << std::endl;
