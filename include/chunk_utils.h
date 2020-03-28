@@ -46,6 +46,7 @@ private:
 
 private:
     int mChunkNumber;
+    ChunkMap mConfigStruct;
     ChunkMap mOfMap;
     ChunkMap mIfMap;
     ChunkMap mFilters;
