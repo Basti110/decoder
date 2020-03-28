@@ -81,9 +81,10 @@ int main(int argc, char* argv[])
         std::cout << "Glob Complete: True" << std::endl;
     else
         std::cout << "Glob Complete: False" << std::endl;
-
+ 
     chunk_container.write_data_on_addr(reserved_mem.get_addr());
-
+    chunk_container.check_ofmap(reserved_mem.get_addr(), 0, 10);
+    return 0;
     //test();
     //img_to_data(image_path, out_path, template_path);
    

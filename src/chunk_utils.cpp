@@ -104,7 +104,7 @@ void ChunkContainer::write_data_on_addr(uint16_t* addr)
     }
 }
 
-bool ChunkContainer::check_ofmap(int* ofmap, int chunk, int eps, int len)
+bool ChunkContainer::check_ofmap(uint16_t* ofmap, int chunk, int eps, int len)
 {
     int lenght = len == -1 ? mChunks[chunk].get_ofmap_len() : len;
 
@@ -113,14 +113,15 @@ bool ChunkContainer::check_ofmap(int* ofmap, int chunk, int eps, int len)
     LOG_ERROR_IF_RETURN_FALSE(mChunks.at(chunk).mOfMap.mLenght != lenght, "Lenght missmatch");
     std::cout << "ifmap " << (unsigned long)ofmap << std::endl;
     std::cout << "ofmap " << (unsigned long)mChunks.at(chunk).mOfMap.mDataPtr << std::endl;
-
+    int err = 0;
     for (int i = 0; i < lenght; ++i) {
-        if (std::abs(mChunks.at(chunk).mOfMap.mDataPtr[i] - ofmap[i]) >= eps) {
+        if (std::abs((uint16_t)(mChunks.at(chunk).mOfMap.mDataPtr[i]) - ofmap[i]) >= eps) {
             std::cout << "error at " << i << "error: " << std::abs(mChunks.at(chunk).mOfMap.mDataPtr[i] - ofmap[i]) << std::endl;
+            err++;
         }
-        std::cout << mChunks.at(chunk).mOfMap.mDataPtr[i] << " " << ofmap[i] << std::endl;
+        //std::cout << mChunks.at(chunk).mOfMap.mDataPtr[i] << " " << ofmap[i] << std::endl;
     }
-
+    std::cout << "ERRRORS: " << err << std::endl;
     return true;
 }
 

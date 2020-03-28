@@ -58,7 +58,7 @@ class ChunkContainer
         bool init_chunk(std::string path_json, int vsize = 4);
         bool read_data_from_glob(std::string path_glob, bool use_ofmap = false, int first_chunk = 0, int last_chunk = 36);
         void write_data_on_addr(uint16_t* addr);
-        bool check_ofmap(int* ofmap, int chunk, int eps, int len = -1);
+        bool check_ofmap(uint16_t* ofmap, int chunk, int eps, int len = -1);
         bool is_complete();
         Chunk& get_chunk(int chunk);
 
