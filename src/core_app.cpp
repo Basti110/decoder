@@ -18,10 +18,10 @@
 #include <opencv2/opencv.hpp>
 #include <cxxopts/cxxopts.hpp>
 
-#include "../include/decoder.h"
 #include "../include/Test.h"
 #include "../include/quantizer.h"
 #include "../include/utils.h"
+#include "../include/chunk_utils.h"
 
 
 using MatrixXf = Eigen::MatrixXf;
@@ -30,19 +30,6 @@ using string = std::string;
 const int box_size = 8732; // j["box_size"].get<int>();
 const int class_size = 48; // j["class_size"].get<int>();
 const int layers = 6;
-
-const int l1_size = 16 * 38 * 38;
-const int c1_size = 192 * 38 * 38;
-const int l2_size = 24 * 19 * 19;
-const int c2_size = 288 * 19 * 19;
-const int l3_size = 24 * 10 * 10;
-const int c3_size = 288 * 10 * 10;
-const int l4_size = 24 * 5 * 5;
-const int c4_size = 288 * 5 * 5;
-const int l5_size = 16 * 3 * 3;
-const int c5_size = 192 * 3 * 3;
-const int l6_size = 16 * 1 * 1;
-const int c6_size = 192 * 1 * 1;
 
 const std::vector<std::array<int, 3>> l_dims({
     {16, 38, 38},
@@ -62,6 +49,33 @@ const std::vector<std::array<int, 3>> c_dims({
     {192, 1, 1}
 });
 
+/*const int l1_size = l_dims[0][0] * l_dims[0][1] * l_dims[0][2]; // *16 * 38 * 38;
+const int c1_size = c_dims[0][0] * c_dims[0][1] * c_dims[0][2];
+const int l2_size = l_dims[1][0] * l_dims[1][1] * l_dims[1][2];
+const int c2_size = c_dims[1][0] * c_dims[1][1] * c_dims[1][2];
+const int l3_size = l_dims[2][0] * l_dims[2][1] * l_dims[2][2];
+const int c3_size = c_dims[2][0] * c_dims[2][1] * c_dims[2][2];
+const int l4_size = l_dims[3][0] * l_dims[3][1] * l_dims[3][2];
+const int c4_size = c_dims[3][0] * c_dims[3][1] * c_dims[3][2];
+const int l5_size = l_dims[4][0] * l_dims[4][1] * l_dims[4][2];
+const int c5_size = c_dims[4][0] * c_dims[4][1] * c_dims[4][2];
+const int l6_size = l_dims[5][0] * l_dims[5][1] * l_dims[5][2];
+const int c6_size = c_dims[5][0] * c_dims[5][1] * c_dims[5][2];*/
+
+const int l1_size = 16 * 38 * 38;
+const int c1_size = 192 * 38 * 38;
+const int l2_size = 24 * 19 * 19;
+const int c2_size = 288 * 19 * 19;
+const int l3_size = 24 * 10 * 10;
+const int c3_size = 288 * 10 * 10;
+const int l4_size = 24 * 5 * 5;
+const int c4_size = 288 * 5 * 5;
+const int l5_size = 16 * 3 * 3;
+const int c5_size = 192 * 3 * 3;
+const int l6_size = 16 * 1 * 1;
+const int c6_size = 192 * 1 * 1;
+const int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
+
 CoreApp::CoreApp(std::string host, int port)
 {
     open_socket(host, port);
@@ -69,9 +83,6 @@ CoreApp::CoreApp(std::string host, int port)
 
 void CoreApp::start_decoder_test(const std::string& image_path, const std::string& data_path, bool use_network)
 {
-    int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
-    int mem_pointer;
-
     std::vector<float> mem(mem_size);
     float value;
     int count = 0;
@@ -82,70 +93,12 @@ void CoreApp::start_decoder_test(const std::string& image_path, const std::strin
         count++;
     }
 
-    Quantizer quant(5, 11);
-    quant.unquant(&mem[0], mem_size);
-
-    std::vector<float> mem_l;
-    std::vector<float> mem_c;
-
-    Test test;
-    Decoder decoder;
-    decoder.init_default_boxes300();
-
-    //todo: speed
-    set_timer();
-    mem_pointer = 0;
-    for (int i = 0; i < layers; i++) {
-        int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
-        int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
-
-        Eigen::TensorMap<Eigen::Tensor<float, 3>> l1_tensor(&mem[mem_pointer], l_dims[i][1], l_dims[i][0], l_dims[i][2]);
-        Eigen::Tensor<float, 3> l_shuffle = l1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
-
-        Eigen::MatrixXf view2d_l = Eigen::Map<Eigen::MatrixXf>(l_shuffle.data(), (int)(size_l / 4), 4);
-        view2d_l.transposeInPlace();
-        //memcpy(&mem[0], fp, 12 * sizeof(float));
-        mem_l.insert(mem_l.end(), view2d_l.data(), view2d_l.data() + size_l);
-
-        mem_pointer += size_l;
-        Eigen::TensorMap<Eigen::Tensor<float, 3>> c1_tensor(&mem[mem_pointer], c_dims[i][1], c_dims[i][0], c_dims[i][2]);
-        Eigen::Tensor<float, 3> c_shuffle = c1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
-
-        Eigen::MatrixXf view2d_c = Eigen::Map<Eigen::MatrixXf>(c_shuffle.data(), (int)(size_c / class_size), class_size);
-        view2d_c.transposeInPlace();
-        mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
-
-        mem_pointer += size_c;
-    }
-    log_timer("Time shuffle 1: %ims");
-
-    set_timer();
-    Eigen::MatrixXf locations = Eigen::Map<Eigen::MatrixXf>(mem_l.data(), 4, box_size);
-    Eigen::MatrixXf scores = Eigen::Map<Eigen::MatrixXf>(mem_c.data(), class_size, box_size);
-
-    locations.transposeInPlace();
-    scores.transposeInPlace();
-    log_timer("Time shuffle 2: %ims");
-
-    //auto finish = std::chrono::high_resolution_clock::now();
-    
-
-    set_timer();
-    vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
-    //finish = std::chrono::high_resolution_clock::now();
-    log_timer("Complete Time decode batch: %ims");
+    vector<BoxLabel> output = generate_output(mem);
 
     cv::Mat image;
     image = cv::imread(image_path, cv::IMREAD_COLOR);
 
-    int width = image.cols;
-    int height = image.rows;
-
-    for (auto label : output) {
-        auto p1 = cv::Point(label.coordinates[0] * width, label.coordinates[1] * height);
-        auto p2 = cv::Point(label.coordinates[2] * width, label.coordinates[3] * height);
-        rectangle(image, p1, p2, cv::Scalar(0, 0, 255), 2);
-    }
+    draw_output(image, output);
 
     if (image.data) {
         if (!use_network) {
@@ -156,6 +109,53 @@ void CoreApp::start_decoder_test(const std::string& image_path, const std::strin
         else
             send_frame(image);
     }
+    return;
+}
+
+void CoreApp::start_fpga_test()
+{
+    string file_path = __FILE__;
+#ifdef _WIN32
+    string dir_path = file_path.substr(0, file_path.rfind("\\"));
+#else
+    string dir_path = file_path.substr(0, file_path.rfind("/"));
+#endif
+    string json_path = dir_path + "/../data/config.json";
+    string glob_path = "/shared_local/conv2d.glob";
+
+    std::vector<float> mem(mem_size);
+    ChunkContainer chunk_container;
+    chunk_container.init_chunk(json_path);
+    chunk_container.read_data_from_glob(glob_path, true, 0, 36);
+    chunk_container.write_data_on_addr(mReservedMemory.get_addr());
+
+    mAsipCtrl.set_start();
+    mAsipCtrl.wait_for_intterupt();
+    chunk_container.check_ofmap(mReservedMemory.get_addr() + 78, 0, 5);
+
+    std::vector<int> layers = {31, 25, 32, 26, 33, 27, 34, 28, 35, 29, 36, 30};
+    int mem_ptr = 0;
+    for (int i = 0; i < layers.size(); i++) {
+        int addr = chunk_container.get_chunk(1).get_ofmap_offset();
+        int len = chunk_container.get_chunk(1).get_ofmap_len();
+        memcpy(&mem[mem_ptr], mReservedMemory.get_addr() + addr, len);
+        mem_ptr += len;
+    }
+
+    /*cv::Mat image;
+    image = cv::imread(image_path, cv::IMREAD_COLOR);
+    vector<BoxLabel> output = generate_output(mem);
+    draw_output(image, output);
+    //TODO
+    if (image.data) {
+        if (!use_network) {
+            cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
+            imshow("Display window", image);
+            cv::waitKey(0);
+        }
+        else
+            send_frame(image);
+    }*/
     return;
 }
 
@@ -196,7 +196,7 @@ void CoreApp::start_camera_test(bool use_network)
 void CoreApp::start_app(int vsize)
 {
     int img_size = 300;
-    int mem_size = l1_size + c1_size + l2_size + c2_size + l3_size + c3_size + l4_size + c4_size + l5_size + c5_size + l6_size + c6_size;
+    
     int mem_pointer;
     short* input_data = new short[img_size * img_size * 3];
     
@@ -237,9 +237,9 @@ void CoreApp::start_app(int vsize)
         // ---------------------------------------
         quant.unquant(&mem[0], mem_size);
 
-
         set_timer();
         mem_pointer = 0;
+
         for (int i = 0; i < layers; i++) {
             int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
             int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
@@ -276,13 +276,7 @@ void CoreApp::start_app(int vsize)
         vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
         log_timer("Complete Time decode batch: %ims");
            
-        int width = frame.cols;
-        int height = frame.rows;
-        for (auto label : output) {
-            auto p1 = cv::Point(label.coordinates[0] * width, label.coordinates[1] * height);
-            auto p2 = cv::Point(label.coordinates[2] * width, label.coordinates[3] * height);
-            rectangle(frame, p1, p2, cv::Scalar(0, 0, 255), 2);
-        }
+        draw_output(frame, output);
         send_frame(frame);
     }
     
@@ -328,6 +322,12 @@ bool CoreApp::get_socket_ready()
 void CoreApp::set_timer()
 {
     mStartTime = std::chrono::high_resolution_clock::now();
+}
+
+void CoreApp::set_timer(std::string msg)
+{
+    set_timer();
+    LOG_INFO(msg);
 }
 
 void CoreApp::log_timer(std::string msg)
@@ -397,5 +397,119 @@ void CoreApp::img_to_data(short* data_ptr, int size, cv::Mat& img)
                 count++;
             }
         }
+    }
+}
+
+vector<BoxLabel> CoreApp::generate_output(std::vector<float> mem)
+{
+    Quantizer quant(5, 11);
+    quant.unquant(&mem[0], mem_size);
+
+    std::vector<float> mem_l;
+    std::vector<float> mem_c;
+
+    Test test;
+    Decoder decoder;
+    decoder.init_default_boxes300();
+
+    //todo: speed
+    set_timer();
+    int mem_pointer = 0;
+
+    for (int i = 0; i < layers; i++) {
+
+        int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
+        int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
+        Eigen::MatrixXf view2d_l(4, (int)(size_l / 4));
+        Eigen::MatrixXf view2d_c(class_size, (int)(size_c / class_size));
+
+        int x = 0;
+        int y = 0;
+        int index_break = (int)(size_l / 4);
+        for (int c = 0; c < l_dims[i][0]; ++c) {
+            for (int h = 0; h < l_dims[i][2]; ++h) {
+                for (int w = 0; w < l_dims[i][1]; ++w) {
+                    if (y >= index_break) {
+                        x++;
+                        y = 0;
+                    }
+                    int data_idx = h * l_dims[i][0] * l_dims[i][1] + c * l_dims[i][1] + w;
+                    view2d_l(x, y) = mem[data_idx + mem_pointer];
+                    y++;
+                }
+            }
+        }
+        mem_l.insert(mem_l.end(), view2d_l.data(), view2d_l.data() + size_l);
+        mem_pointer += size_l;
+
+
+        x = 0;
+        y = 0;
+        index_break = (int)(size_c / class_size);
+        for (int c = 0; c < c_dims[i][0]; ++c) {
+            for (int h = 0; h < c_dims[i][2]; ++h) {
+                for (int w = 0; w < c_dims[i][1]; ++w) {
+                    if (y >= index_break) {
+                        x++;
+                        y = 0;
+                    }
+                    int data_idx = h * c_dims[i][0] * c_dims[i][1] + c * c_dims[i][1] + w;
+                    view2d_c(x, y) = mem[data_idx + mem_pointer];
+                    y++;
+                }
+            }
+        }
+        mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
+        mem_pointer += size_c;
+    }
+    /*for (int i = 0; i < layers; i++) {
+        int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
+        int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
+
+        Eigen::TensorMap<Eigen::Tensor<float, 3>> l1_tensor(&mem[mem_pointer], l_dims[i][1], l_dims[i][0], l_dims[i][2]);
+        Eigen::Tensor<float, 3> l_shuffle = l1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
+
+        Eigen::MatrixXf view2d_l = Eigen::Map<Eigen::MatrixXf>(l_shuffle.data(), (int)(size_l / 4), 4);
+        view2d_l.transposeInPlace();
+        //memcpy(&mem[0], fp, 12 * sizeof(float));
+        mem_l.insert(mem_l.end(), view2d_l.data(), view2d_l.data() + size_l);
+
+        mem_pointer += size_l;
+        Eigen::TensorMap<Eigen::Tensor<float, 3>> c1_tensor(&mem[mem_pointer], c_dims[i][1], c_dims[i][0], c_dims[i][2]);
+        Eigen::Tensor<float, 3> c_shuffle = c1_tensor.shuffle(Eigen::array<int, 3>({ 0, 2, 1 }));
+
+        Eigen::MatrixXf view2d_c = Eigen::Map<Eigen::MatrixXf>(c_shuffle.data(), (int)(size_c / class_size), class_size);
+        view2d_c.transposeInPlace();
+        mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
+
+        mem_pointer += size_c;
+    }*/
+    log_timer("Time shuffle 1: %ims");
+
+    set_timer();
+    Eigen::MatrixXf locations = Eigen::Map<Eigen::MatrixXf>(mem_l.data(), 4, box_size);
+    Eigen::MatrixXf scores = Eigen::Map<Eigen::MatrixXf>(mem_c.data(), class_size, box_size);
+
+    locations.transposeInPlace();
+    scores.transposeInPlace();
+    log_timer("Time shuffle 2: %ims");
+
+    //auto finish = std::chrono::high_resolution_clock::now();
+
+
+    set_timer("--- Start decode batch ---" );
+    vector<BoxLabel> output = decoder.listdecode_batch(locations, scores);
+    log_timer("--- End decode batch in %ims ---");
+    return output;
+}
+
+void CoreApp::draw_output(cv::Mat& frame, const vector<BoxLabel>& output)
+{
+    int width = frame.cols;
+    int height = frame.rows;
+    for (auto label : output) {
+        auto p1 = cv::Point(label.coordinates[0] * width, label.coordinates[1] * height);
+        auto p2 = cv::Point(label.coordinates[2] * width, label.coordinates[3] * height);
+        rectangle(frame, p1, p2, cv::Scalar(0, 0, 255), 2);
     }
 }

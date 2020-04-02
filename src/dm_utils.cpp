@@ -122,6 +122,12 @@ bool AsipCtrl::ack_interrupt()
 #endif
 }
 
+void AsipCtrl::wait_for_intterupt()
+{
+    if(ack_interrupt())
+        wait_for_intterupt();
+}
+
 void AsipCtrl::clear_start() {
     uint32_t v = mBasePtr[0] & mStartMask; 
     mBasePtr[0] = v; //(((uint32_t)1) << 16);

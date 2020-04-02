@@ -34,6 +34,7 @@ public:
     int* get_ofmap_ptr();
     int* get_ifmap_ptr();
     int* get_filter_ptr();
+    int get_ofmap_offset();
     int get_ofmap_len();
     int get_ifmap_len();
     int get_filter_len();

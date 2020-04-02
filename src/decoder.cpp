@@ -215,7 +215,7 @@ void Decoder::scale_back_batch(MatrixXf& boxes_in, MatrixXf& scores_in)
     }
 
     auto finish = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Time softmax: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
+    LOG_INFO("|-- Time softmax: %ims", std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 }
 
 //input:

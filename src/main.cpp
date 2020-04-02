@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
     //gpio.write_test();
     
     string json_path = dir_path + "/../data/config.json";
-    string glob_path = "/shared_local/conv2d.glob";
-    //string glob_path = dir_path + "/../data/configs/conv2d.glob";
+    //string glob_path = "/shared_local/conv2d.glob";
+    string glob_path = dir_path + "/../data/configs/conv2d.glob";
     string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
@@ -88,6 +88,11 @@ int main(int argc, char* argv[])
 
     auto result = options.parse(argc, argv);
 
+    if (result.count("h")) {
+        std::cout << options.help({ "" }) << std::endl;
+        exit(0);
+    }
+
     if (result.count("ps")) {
         uint16_t* ptr = reserved_mem.get_addr();
         for (int i = 0; i < 78; i++)
@@ -115,7 +120,7 @@ int main(int argc, char* argv[])
     }
 
     if (result.count("co")) {
-        chunk_container.write_data_on_addr(reserved_mem.get_addr());
+        chunk_container.check_ofmap(reserved_mem.get_addr() + 78, 0, 5);
         return 0;
     }
 
@@ -135,11 +140,6 @@ int main(int argc, char* argv[])
     if (result.count("vsize"))
         vsize = result["vsize"].as<int>();
 
-
-    if (result.count("h")) {
-        std::cout << options.help({ "" }) << std::endl;
-        exit(0);
-    }
 
     if (result.count("v")) {
         std::cout << "Verbose ON" << std::endl;

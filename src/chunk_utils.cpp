@@ -344,6 +344,11 @@ int* Chunk::get_filter_ptr()
     return mFilters.mDataPtr;
 }
 
+int Chunk::get_ofmap_offset()
+{
+    return mOfMap.mStartAddr;
+}
+
 int Chunk::get_ofmap_len()
 {
     return mOfMap.mLenght;
