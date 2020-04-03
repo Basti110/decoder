@@ -113,8 +113,9 @@ bool ChunkContainer::check_ofmap(uint16_t* ofmap, int chunk, int eps, int len)
     LOG_ERROR_IF_RETURN_FALSE(chunk >= mChunks.size(), "Chunk not in range");
     LOG_ERROR_IF_RETURN_FALSE(mChunks.at(chunk).mOfMap.mFillPtr == mChunks.at(chunk).mOfMap.mDataPtr, "Map not filled");
     LOG_ERROR_IF_RETURN_FALSE(mChunks.at(chunk).mOfMap.mLenght != lenght, "Lenght missmatch");
-    std::cout << "ifmap " << (unsigned long)ofmap << std::endl;
-    std::cout << "ofmap " << (unsigned long)mChunks.at(chunk).mOfMap.mDataPtr << std::endl;
+    //std::cout << "ifmap " << (unsigned long)ofmap << std::endl;
+    //std::cout << "ofmap " << (unsigned long)mChunks.at(chunk).mOfMap.mDataPtr << std::endl;
+    uint16_t* ptr = ofmap + mChunks.at(chunk).mOfMap.mStartAddr;
     int err = 0;
     for (int i = 0; i < lenght; ++i) {
         if (std::abs((uint16_t)(mChunks.at(chunk).mOfMap.mDataPtr[i]) - ofmap[i]) >= eps) {
@@ -123,7 +124,7 @@ bool ChunkContainer::check_ofmap(uint16_t* ofmap, int chunk, int eps, int len)
         }
         //std::cout << mChunks.at(chunk).mOfMap.mDataPtr[i] << " " << ofmap[i] << std::endl;
     }
-    std::cout << "ERRRORS: " << err << std::endl;
+    std::cout << "ERRRORS CHUNK " << chunk << " WITH LEN " << len << ": " << err << std::endl;
     return true;
 }
 
@@ -170,9 +171,10 @@ void ChunkContainer::set_chunk_active(bool use_ofmap, int first_chunk, int last_
         mChunks[i].mFilters.mFillPtr = mChunks[i].mFilters.mDataPtr;
         mChunks[i].mFilters.mIsActive = true;
 
+        mChunks[i].mOfMap.mDataPtr = new int[mChunks[i].mOfMap.mLenght];
+        mChunks[i].mOfMap.mFillPtr = mChunks[i].mOfMap.mDataPtr;
+        
         if (use_ofmap) {
-            mChunks[i].mOfMap.mDataPtr = new int[mChunks[i].mOfMap.mLenght];
-            mChunks[i].mOfMap.mFillPtr = mChunks[i].mOfMap.mDataPtr;
             mChunks[i].mOfMap.mIsActive = true;
         }
 
@@ -291,10 +293,17 @@ void Chunk::write_to_memory(uint16_t* addr)
         }
     }
 
-    std::cout << "Adrr Ofmap: " << mOfMap.mStartAddr << std::endl;
+    
     if (mOfMap.mIsActive) {
+        std::cout << "Adrr Ofmap: " << mOfMap.mStartAddr << std::endl;
         for (int i = 0; i < mOfMap.mLenght; ++i) {
             (addr + mOfMap.mStartAddr)[i] = (uint16_t)mOfMap.mDataPtr[i];
+        }
+    }
+    else {
+        std::cout << "WRITE 0 AT OFMAP: " << mOfMap.mStartAddr << std::endl;
+        for (int i = 0; i < mOfMap.mLenght; ++i) {
+            (addr + mOfMap.mStartAddr)[i] = 0;
         }
     }
 

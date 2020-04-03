@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
     //gpio.write_test();
     
     string json_path = dir_path + "/../data/config.json";
-    //string glob_path = "/shared_local/conv2d.glob";
-    string glob_path = dir_path + "/../data/configs/conv2d.glob";
+    string glob_path = "/shared_local/conv2d.glob";
+    //string glob_path = dir_path + "/../data/configs/conv2d.glob";
     string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
-    chunk_container.read_data_from_glob(glob_path, true, 0, 36);
+    chunk_container.read_data_from_glob(glob_path, false, 0, 36);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
     bool is_complete = chunk_container.is_complete();
@@ -120,7 +120,9 @@ int main(int argc, char* argv[])
     }
 
     if (result.count("co")) {
-        chunk_container.check_ofmap(reserved_mem.get_addr() + 78, 0, 5);
+        LOG_INFO("Check Ofmaps");
+        for(int i = 0; i < 36; i++)
+            chunk_container.check_ofmap(reserved_mem.get_addr(), i, 5);
         return 0;
     }
 
