@@ -118,13 +118,13 @@ bool ChunkContainer::check_ofmap(uint16_t* ofmap, int chunk, int eps, int len)
     uint16_t* ptr = ofmap + mChunks.at(chunk).mOfMap.mStartAddr;
     int err = 0;
     for (int i = 0; i < lenght; ++i) {
-        if (std::abs((uint16_t)(mChunks.at(chunk).mOfMap.mDataPtr[i]) - ofmap[i]) >= eps) {
-            std::cout << "error at " << i << "error: " << std::abs(mChunks.at(chunk).mOfMap.mDataPtr[i] - ofmap[i]) << std::endl;
+        if (std::abs((uint16_t)(mChunks.at(chunk).mOfMap.mDataPtr[i]) - ptr[i]) >= eps) {
+            //std::cout << "error at " << i << "error: " << std::abs(mChunks.at(chunk).mOfMap.mDataPtr[i] - ofmap[i]) << std::endl;
             err++;
         }
         //std::cout << mChunks.at(chunk).mOfMap.mDataPtr[i] << " " << ofmap[i] << std::endl;
     }
-    std::cout << "ERRRORS CHUNK " << chunk << " WITH LEN " << len << ": " << err << std::endl;
+    std::cout << "ERRRORS CHUNK " << chunk << " WITH LEN " << lenght << ": " << err << std::endl;
     return true;
 }
 
@@ -199,36 +199,41 @@ void Chunk::read(int* data_ptr, int glob_addr, int len)
     int data_end = glob_addr + len;
     int cur_addr = glob_addr;
     int cur_len = len;
+    int* ptr = data_ptr;
     // Not in Range
     if (chunk_end < data_start || data_end < chunk_start)
         return;
 
     // A Part is in Config Struct
     if (cur_addr < mConfigStruct.mStartAddr + mConfigStruct.mLenght && cur_addr + cur_len >= mConfigStruct.mStartAddr) {
-        int r = read_map(data_ptr, cur_addr, cur_len, mConfigStruct);
+        int r = read_map(ptr, cur_addr, cur_len, mConfigStruct);
         cur_addr += r;
         cur_len -= r;
+        ptr+=r;
     }
 
     // A Part is in OfMaps
     if (cur_addr < mOfMap.mStartAddr + mOfMap.mLenght && cur_addr + cur_len >= mOfMap.mStartAddr) {
-        int r = read_map(data_ptr, cur_addr, cur_len, mOfMap);
+        int r = read_map(ptr, cur_addr, cur_len, mOfMap);
         cur_addr += r;
         cur_len -= r;
+        ptr+=r;
     }
 
     // A part is in Filters
     if (cur_addr < mIfMap.mStartAddr && cur_addr + cur_len >= mFilters.mStartAddr) {
-        int r = read_map(data_ptr, cur_addr, cur_len, mFilters);
+        int r = read_map(ptr, cur_addr, cur_len, mFilters);
         cur_addr += r;
         cur_len -= r;
+        ptr+=r;
     }
 
     // A part is in IfMaps
     if (cur_addr < chunk_end && cur_addr + cur_len >= mIfMap.mStartAddr) {
-        int r = read_map(data_ptr, cur_addr, cur_len, mIfMap);
+        int r = read_map(ptr, cur_addr, cur_len, mIfMap);
         cur_addr += r;
         cur_len -= r;
+        ptr+=r;
     }    
 
     return;
@@ -382,7 +387,7 @@ int Chunk::read_map(int* data_ptr, int glob_addr, int len, ChunkMap& map)
 
     if (!map.mIsActive)
         return read_len;
-
+    int len_abs = read_len;
     if (glob_addr < map.mStartAddr) {
         int diff = map.mStartAddr - glob_addr;
         ptr += diff;
@@ -393,5 +398,5 @@ int Chunk::read_map(int* data_ptr, int glob_addr, int len, ChunkMap& map)
     std::memcpy(map.mFillPtr, ptr, read_len * sizeof(int));
     map.mFillPtr += read_len;
 
-    return read_len;
+    return len_abs;
 }

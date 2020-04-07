@@ -101,27 +101,30 @@ int main(int argc, char* argv[])
     }
 
     // ----- Load Glob ---------
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    ChunkContainer chunk_container;
-    chunk_container.init_chunk(json_path);
-    chunk_container.read_data_from_glob(glob_path, false, 0, 36);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
-    bool is_complete = chunk_container.is_complete();
-
-    if (is_complete)
-        std::cout << "Glob Check Complete: True" << std::endl;
-    else
-        std::cout << "Glob Check Complete: False" << std::endl;
-
     if (result.count("wg")) {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        ChunkContainer chunk_container;
+        chunk_container.init_chunk(json_path);
+        chunk_container.read_data_from_glob(glob_path, false, 0, 36);
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+        bool is_complete = chunk_container.is_complete();
+
         chunk_container.write_data_on_addr(reserved_mem.get_addr());
         return 0;
     }
 
     if (result.count("co")) {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        ChunkContainer chunk_container;
+        chunk_container.init_chunk(json_path);
+        chunk_container.read_data_from_glob(glob_path, true, 0, 36);
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "Read Glob in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms" << std::endl;
+        bool is_complete = chunk_container.is_complete();
+
         LOG_INFO("Check Ofmaps");
-        for(int i = 0; i < 36; i++)
+        for(int i = 0; i < 37; i++)
             chunk_container.check_ofmap(reserved_mem.get_addr(), i, 5);
         return 0;
     }
