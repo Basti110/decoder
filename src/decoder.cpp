@@ -85,7 +85,7 @@ bool Decoder::init_default_boxes(const DefaultBoxSetting& s)
 
 vector<BoxLabel> Decoder::listdecode_batch(MatrixXf& boxes_in, MatrixXf& scores_in, float criteria, float max_output)
 {
-    const float treshold = 0.5;
+    const float treshold = 0.2;
     const float max_elements = 200;
 
     auto start = std::chrono::high_resolution_clock::now();

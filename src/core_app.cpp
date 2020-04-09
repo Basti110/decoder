@@ -122,26 +122,44 @@ void CoreApp::start_fpga_test()
 #endif
     string json_path = dir_path + "/../data/config.json";
     string glob_path = "/shared_local/conv2d.glob";
+    string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
 
     std::vector<float> mem(mem_size);
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
-    chunk_container.read_data_from_glob(glob_path, true, 0, 36);
+    /*chunk_container.read_data_from_glob(glob_path, true, 0, 36);
     chunk_container.write_data_on_addr(mReservedMemory.get_addr());
 
     mAsipCtrl.set_start();
-    mAsipCtrl.wait_for_intterupt();
-    chunk_container.check_ofmap(mReservedMemory.get_addr() + 78, 0, 5);
-
+    mAsipCtrl.wait_for_intterupt();*/
+    //chunk_container.check_ofmap(mReservedMemory.get_addr() + 78, 0, 5);
+    LOG_INFO("START TEST");
     std::vector<int> layers = {31, 25, 32, 26, 33, 27, 34, 28, 35, 29, 36, 30};
     int mem_ptr = 0;
     for (int i = 0; i < layers.size(); i++) {
-        int addr = chunk_container.get_chunk(1).get_ofmap_offset();
-        int len = chunk_container.get_chunk(1).get_ofmap_len();
-        memcpy(&mem[mem_ptr], mReservedMemory.get_addr() + addr, len);
+        LOG_INFO("TEST");
+        int addr = chunk_container.get_chunk(layers[i]).get_ofmap_offset();
+        int len = chunk_container.get_chunk(layers[i]).get_ofmap_len();
+        LOG_INFO("CHUNK %i, Start ddr: %i, Len: %i", layers[i], addr, len);
+        //memcpy(&mem[mem_ptr], mReservedMemory.get_addr() + addr, len);
+        for(int j = 0; j < len; j++) {
+            mem[mem_ptr + j] = mReservedMemory.get_addr()[addr + len];
+        }
         mem_ptr += len;
     }
+    vector<BoxLabel> output = generate_output(mem);
 
+    for(int i = 0; i < output.size(); i++) {
+        LOG_INFO("SCORE: %i", output[i].score);
+    }
+
+
+    cv::Mat image;
+    image = cv::imread(image_path, cv::IMREAD_COLOR);
+
+    draw_output(image, output);
+    std::cout << "write jpg at path: " << dir_path << "/test.jpg" << std::endl;
+    cv::imwrite(dir_path + "/test.jpg", image);
     /*cv::Mat image;
     image = cv::imread(image_path, cv::IMREAD_COLOR);
     vector<BoxLabel> output = generate_output(mem);
@@ -416,7 +434,7 @@ vector<BoxLabel> CoreApp::generate_output(std::vector<float> mem)
     set_timer();
     int mem_pointer = 0;
 
-    for (int i = 0; i < layers; i++) {
+    /*for (int i = 0; i < layers; i++) {
 
         int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
         int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
@@ -461,8 +479,8 @@ vector<BoxLabel> CoreApp::generate_output(std::vector<float> mem)
         }
         mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
         mem_pointer += size_c;
-    }
-    /*for (int i = 0; i < layers; i++) {
+    }*/
+    for (int i = 0; i < layers; i++) {
         int size_l = l_dims[i][0] * l_dims[i][1] * l_dims[i][2];
         int size_c = c_dims[i][0] * c_dims[i][1] * c_dims[i][2];
 
@@ -483,7 +501,7 @@ vector<BoxLabel> CoreApp::generate_output(std::vector<float> mem)
         mem_c.insert(mem_c.end(), view2d_c.data(), view2d_c.data() + size_c);
 
         mem_pointer += size_c;
-    }*/
+    }
     log_timer("Time shuffle 1: %ims");
 
     set_timer();

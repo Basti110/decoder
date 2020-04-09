@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
         if (network)
             app.open_socket(ip, port);
 
-        app.start_decoder_test(image_path, data_path, network);
+        app.start_fpga_test();
     } 
     else {
         CoreApp app = CoreApp();
