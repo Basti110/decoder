@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     string json_path = dir_path + "/../data/config.json";
     string glob_path = "/shared_local/conv2d.glob";
     //string glob_path = dir_path + "/../data/configs/conv2d.glob";
-    string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
+    string image_path = dir_path + "/../data/imgs/img_0.jpg";
     string out_path = dir_path + "/../data/img_desk.dat";
     string template_path = dir_path + "/../data/conv2d_template.dat";
     string data_path = dir_path + "/../input.dat";
@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
         CoreApp app = CoreApp();
         if (network)
             app.open_socket(ip, port);
-
-        app.start_fpga_test();
+        app.start_decoder_test(image_path, data_path, network);
+        //app.start_fpga_test();
     } 
     else {
         CoreApp app = CoreApp();

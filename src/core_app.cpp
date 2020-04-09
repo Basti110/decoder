@@ -112,7 +112,7 @@ void CoreApp::start_decoder_test(const std::string& image_path, const std::strin
     return;
 }
 
-void CoreApp::start_fpga_test()
+void CoreApp::start_fpga_test(const std::string& img_path, const std::string& data_path)
 {
     string file_path = __FILE__;
 #ifdef _WIN32
@@ -122,29 +122,39 @@ void CoreApp::start_fpga_test()
 #endif
     string json_path = dir_path + "/../data/config.json";
     string glob_path = "/shared_local/conv2d.glob";
-    string image_path = dir_path + "/../data/imgs/20200308_170823.jpg";
+    string image_path = img_path; // dir_path + "/../data/imgs/20200308_170823.jpg";
 
     std::vector<float> mem(mem_size);
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
-    /*chunk_container.read_data_from_glob(glob_path, true, 0, 36);
-    chunk_container.write_data_on_addr(mReservedMemory.get_addr());
 
-    mAsipCtrl.set_start();
-    mAsipCtrl.wait_for_intterupt();*/
-    //chunk_container.check_ofmap(mReservedMemory.get_addr() + 78, 0, 5);
+    std::vector<float> dat_file(mem_size);
+    float value;
+    int count = 0;
+
+    std::ifstream infile(data_path);
+    while (infile >> value) {
+        dat_file[count] = value;
+        count++;
+    }
+
     LOG_INFO("START TEST");
     std::vector<int> layers = {31, 25, 32, 26, 33, 27, 34, 28, 35, 29, 36, 30};
     int mem_ptr = 0;
     for (int i = 0; i < layers.size(); i++) {
-        LOG_INFO("TEST");
         int addr = chunk_container.get_chunk(layers[i]).get_ofmap_offset();
         int len = chunk_container.get_chunk(layers[i]).get_ofmap_len();
-        LOG_INFO("CHUNK %i, Start ddr: %i, Len: %i", layers[i], addr, len);
+        LOG_INFO("CHUNK %i, Start Addr: %i, Len: %i", layers[i], addr, len);
         //memcpy(&mem[mem_ptr], mReservedMemory.get_addr() + addr, len);
+        int error = 0;
         for(int j = 0; j < len; j++) {
-            mem[mem_ptr + j] = mReservedMemory.get_addr()[addr + len];
+            float value = (float)mReservedMemory.get_addr()[addr + j];
+            if (abs(dat_file[mem_ptr + j] - value) > 0.5) {
+                error++;
+            }
+            mem[mem_ptr + j] = value;
         }
+        LOG_INFO("ERRORS: %i", error);
         mem_ptr += len;
     }
     vector<BoxLabel> output = generate_output(mem);
@@ -159,7 +169,7 @@ void CoreApp::start_fpga_test()
 
     draw_output(image, output);
     std::cout << "write jpg at path: " << dir_path << "/test.jpg" << std::endl;
-    cv::imwrite(dir_path + "/test.jpg", image);
+    cv::imwrite(dir_path + "../output.jpg", image);
     /*cv::Mat image;
     image = cv::imread(image_path, cv::IMREAD_COLOR);
     vector<BoxLabel> output = generate_output(mem);

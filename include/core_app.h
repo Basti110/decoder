@@ -12,7 +12,7 @@ public:
     CoreApp() {};
     CoreApp(std::string host, int port);
     void start_decoder_test(const std::string& image_path, const std::string& data_path, bool use_network);
-    void start_fpga_test();
+    void start_fpga_test(const std::string& image_path, const std::string& data_path);
     void start_camera_test(bool use_network);
     void start_app(int vsize);
     bool open_socket(std::string host, int port);
