@@ -128,7 +128,7 @@ void CoreApp::start_fpga_test(const std::string& img_path, const std::string& da
     ChunkContainer chunk_container;
     chunk_container.init_chunk(json_path);
 
-    std::vector<float> dat_file(mem_size);
+    /*std::vector<float> dat_file(mem_size);
     float value;
     int count = 0;
 
@@ -136,7 +136,7 @@ void CoreApp::start_fpga_test(const std::string& img_path, const std::string& da
     while (infile >> value) {
         dat_file[count] = value;
         count++;
-    }
+    }*/
 
     LOG_INFO("START TEST");
     std::vector<int> layers = {31, 25, 32, 26, 33, 27, 34, 28, 35, 29, 36, 30};
@@ -148,19 +148,25 @@ void CoreApp::start_fpga_test(const std::string& img_path, const std::string& da
         //memcpy(&mem[mem_ptr], mReservedMemory.get_addr() + addr, len);
         int error = 0;
         for(int j = 0; j < len; j++) {
-            float value = (float)mReservedMemory.get_addr()[addr + j];
-            if (abs(dat_file[mem_ptr + j] - value) > 0.5) {
+            int value = ((int16_t*)mReservedMemory.get_addr())[addr + j];
+                //std::cout << std::dec << j << ": " << value << " : "  << dat_file[mem_ptr + j] << std::endl;
+                //std::cin.ignore();
+            /*if (std::abs((int16_t)dat_file[mem_ptr + j] - value) >= 1) {
                 error++;
-            }
-            mem[mem_ptr + j] = value;
+                //std::cout << j << ": " << std::hex << value << " : " << std::hex << (int16_t)dat_file[mem_ptr +
+                //j] << std::endl;
+                //std::cin.ignore();
+            }*/
+            mem[mem_ptr + j] = (float)value; // dat_file[mem_ptr + j];
         }
-        LOG_INFO("ERRORS: %i", error);
+        //LOG_INFO("ERRORS: %i", error);
         mem_ptr += len;
     }
     vector<BoxLabel> output = generate_output(mem);
 
+    LOG_INFO("Found %i Boxes", output.size());
     for(int i = 0; i < output.size(); i++) {
-        LOG_INFO("SCORE: %i", output[i].score);
+        LOG_INFO("|-- SCORE: %f", output[i].score);
     }
 
 
@@ -168,8 +174,8 @@ void CoreApp::start_fpga_test(const std::string& img_path, const std::string& da
     image = cv::imread(image_path, cv::IMREAD_COLOR);
 
     draw_output(image, output);
-    std::cout << "write jpg at path: " << dir_path << "/test.jpg" << std::endl;
-    cv::imwrite(dir_path + "../output.jpg", image);
+    std::cout << "write jpg at path: " << dir_path << "/../output.jpg" << std::endl;
+    cv::imwrite(dir_path + "/../output.jpg", image);
     /*cv::Mat image;
     image = cv::imread(image_path, cv::IMREAD_COLOR);
     vector<BoxLabel> output = generate_output(mem);
