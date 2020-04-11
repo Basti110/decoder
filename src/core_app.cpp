@@ -197,7 +197,7 @@ void CoreApp::start_camera_test(bool use_network)
 {
     cv::Mat frame;
     cv::VideoCapture cap;
-    cap.open("E:\\aquaman_2018.mkv");
+    cap.open("/home/basti/data/daten/aquaman_2018.mkv");
 
     if (!cap.isOpened()) {
         std::cerr << "ERROR! Unable to open camera\n";
@@ -214,16 +214,17 @@ void CoreApp::start_camera_test(bool use_network)
             std::cerr << "ERROR! blank frame grabbed\n";
             break;
         }
+        cv::resize(frame, frame, cv::Size(720, 480));
         if (use_network) {
-            std::cout << "t1" << std::endl;
+            //std::cout << "t1" << std::endl;
             send_frame(frame);
-            std::cout << "t2" << std::endl;
+            //std::cout << "t2" << std::endl;
         }
         else {
             cv::imshow("cam", frame);
             if (cv::waitKey(30) >= 0) break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
@@ -318,7 +319,7 @@ void CoreApp::start_app(int vsize)
 
 bool CoreApp::open_socket(std::string host, int port)
 {
-    struct sockaddr_in serverAddr;
+    struct sockaddr_in* serverAddr = new sockaddr_in;
     int addrLen = sizeof(struct sockaddr_in);
 
 #ifdef _WIN32
@@ -334,11 +335,11 @@ bool CoreApp::open_socket(std::string host, int port)
         return false;
     }
 
-    serverAddr.sin_family = PF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
-    serverAddr.sin_port = htons(port);
+    serverAddr->sin_family = AF_INET;
+    serverAddr->sin_addr.s_addr = inet_addr(host.c_str());
+    serverAddr->sin_port = htons(port);
 
-    if (connect(mSocket, (sockaddr*)&serverAddr, addrLen) < 0) {
+    if (connect(mSocket, (sockaddr*)serverAddr, addrLen) < 0) {
         std::cerr << "connect() failed!" << std::endl;
         mSocketReady = false;
         return false;
@@ -384,7 +385,7 @@ bool CoreApp::send_frame(cv::Mat& frame)
         return false;
     }
 
-    cv::resize(frame, frame, cv::Size(1080, 720));
+    cv::resize(frame, frame, cv::Size(720, 480));
     std::vector<int> params;
     params.push_back(cv::IMWRITE_JPEG_QUALITY);
     params.push_back(60); //image quality
@@ -398,18 +399,35 @@ bool CoreApp::send_frame(cv::Mat& frame)
     size_bytes[2] = (n >> 8) & 0xFF;
     size_bytes[3] = n & 0xFF;
 
-    std::cout << "send size 4 bytes: size " << n << std::endl;
-    if ((bytes = send(mSocket, (const char*)&size_bytes, 4, 0)) < 0) {
+    //char *hello = "Hello from client";
+    //send(mSocket , hello , strlen(hello) , 0 ); 
+    if ((bytes = send(mSocket, size_bytes, 4, 0)) < 0) {
         std::cerr << "bytes = " << bytes << std::endl;
         return false;
     }
+    if(bytes != 4) 
+        std::cout << "send: " << bytes << " : " << 4 << std::endl;
+    //std::cout << "send size 4 bytes: size " << bytes << std::endl;
 
-    std::cout << "send: " << mBuffer.size() << std::endl;
     if ((bytes = send(mSocket, (const char*)mBuffer.data(), mBuffer.size(), 0)) < 0) {
         std::cerr << "bytes = " << bytes << std::endl;
         return false;
     }
-    std::cout << "end" << std::endl;
+    if(bytes != mBuffer.size()) 
+        std::cout << "send: " << bytes << " : " << mBuffer.size() << std::endl;
+    //std::cout << "send: " << bytes << " : " << mBuffer.size() << std::endl;
+    //std::cout << "end" << std::endl;
+    //std::cout << "wait" << std::endl;
+    uint16_t read_buffer[1];
+    bytes = 0;
+    while (bytes == 0)
+    {
+        bytes = read( mSocket , read_buffer, 1);
+    }
+    //std::cout << "read " << bytes << "bytes" << std::endl;
+    
+    
+
 }
 
 void CoreApp::img_to_data(short* data_ptr, int size, cv::Mat& img)

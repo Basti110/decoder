@@ -64,7 +64,9 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "unistd.h": "c",
+        "codecvt": "cpp"
     },
     "python.pythonPath": "pyenv\\Scripts\\python.exe"
 }

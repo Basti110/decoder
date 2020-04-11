@@ -151,6 +151,15 @@ int main(int argc, char* argv[])
         ::utils::verbose = true;
     }
 
+    if (result.count("c")) {
+        std::cout << "*** Camera Test  ***" << std::endl;
+        CoreApp app = CoreApp();
+        if (network)
+            app.open_socket(ip, port);
+
+        app.start_camera_test(network);
+    }
+
     if (result.count("t")) {
         std::cout << "*** Decoder Test  ***" << std::endl;
         if (result.count("i"))
@@ -169,15 +178,6 @@ int main(int argc, char* argv[])
         app.open_socket(ip, port);
         app.start_app(vsize);
         //app.start_decoder_test(image_path, data_path, network);
-    }
-
-    if (result.count("c")) {
-        std::cout << "*** Camera Test  ***" << std::endl;
-        CoreApp app = CoreApp();
-        if (network)
-            app.open_socket(ip, port);
-
-        app.start_camera_test(network);
     }
 }
 
